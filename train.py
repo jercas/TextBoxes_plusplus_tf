@@ -235,17 +235,20 @@ def main(_):
 
         # Select the dataset.
         dataset = sythtextprovider.get_datasets(FLAGS.dataset_dir)
+
         # Get the TextBoxes++ network and its anchors.
         text_net = txtbox_384.TextboxNet()
+        # Stage 2 training using the 768x768 input size.
         if FLAGS.large_training:
             text_net.params = text_net.params._replace(img_shape = (768, 768))
             text_net.params = text_net.params._replace(feat_shapes = [(96, 96), (48,48), (24, 24), (12, 12), (10, 10), (8, 8)])
         text_shape = text_net.params.img_shape
-        print('text_shape ' + str(text_shape))
+        print('text_shape: ' + str(text_shape))
         text_anchors = text_net.anchors(text_shape)
-
+        # Print the training configuration.
         tf_utils.print_configuration(FLAGS.__flags, text_net.params,
                                      dataset.data_sources, FLAGS.train_dir)
+
         # =================================================================== #
         # Create a dataset provider and batches.
         # =================================================================== #

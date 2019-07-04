@@ -19,6 +19,7 @@ import tensorflow.contrib.slim as slim
 # =========================================================================== #
 # Text class definition.
 # =========================================================================== #
+# Define a namedtuple data structure to keep the params of TextboxNet class.
 TextboxParams = namedtuple('TextboxParameters', [
     'img_shape', 'num_classes', 'feat_layers', 'feat_shapes',
     'anchor_ratios', 'anchor_sizes', 'anchor_steps', 'normalizations',
@@ -29,20 +30,24 @@ TextboxParams = namedtuple('TextboxParameters', [
 class TextboxNet(object):
     """
     Implementation of the Textbox 384 network.
-    The default image size used to train this network is 384x384.
+    The default image size used to train this network is '384x384'.
+    Stage 1: 384x384， Stage 2: 768x768.
     """
     default_params = TextboxParams(
         img_shape=(384, 384),
         num_classes=2,
+	    # The 6 intermediate conv layers connected to the 6 Text-box layers.
         feat_layers=['conv4', 'conv7', 'conv8', 'conv9', 'conv10', 'conv11'],
         feat_shapes=[(48, 48), (24, 24), (12, 12), (6, 6), (4, 4), (2, 2)],
+	    # Anchors 48 = 8 ratios * 6 sizes
+	    # !!! Different anchor ratios setting from the original paper (1,2,3,5,1/2,1/3,1/5)->(2,1/2,3,1/3,4,1/4,5,1/5).
         anchor_ratios=[
-            [2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. /4, 5., 1. /5],
             [2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
             [2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
             [2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
             [2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
-            [2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5.0, 1. / 5],
+            [2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
+            [2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
         ],
         anchor_sizes=[
             (30.,60.),
@@ -88,7 +93,7 @@ class TextboxNet(object):
             reuse=reuse,
             scope=scope,
             update_feat_shapes=update_feat_shapes)
-        # Update feature shapes (try at least!)
+        # Update feature shapes (try at least!), stage 2 training start: replace input shape from 384x384->768x768
         if update_feat_shapes:
             shapes = textboxes_feat_shapes_from_net(r[-1],
                                                     self.params.feat_shapes)
@@ -238,8 +243,9 @@ def text_net(inputs,
              scope='text_box_384',
              update_feat_shapes=False):
     end_points = {}
-    with tf.variable_scope(scope, 'text_box_300', [inputs], reuse=reuse):  # 300*300 384*383
-        # Original VGG-16 blocks.
+    with tf.variable_scope(scope, 'text_box_300', [inputs], reuse=reuse):  # 300*300 384*384
+        # Original VGG-16 blocks, total 13 layers.
+        # Block 1.
         net = slim.repeat(inputs, 2, slim.conv2d, 64, [3, 3], scope='conv1')  # 300 384
         end_points['conv1'] = net
         net = slim.max_pool2d(net, [2, 2], scope='pool1')  # 150
@@ -253,9 +259,8 @@ def text_net(inputs,
         net = slim.max_pool2d(net, [2, 2], scope='pool3')  # 38
         # Block 4.
         net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv4')  # 38 40
-        end_point = 'conv4'
-
-        end_points[end_point] = net
+        ###end_point = 'conv4'
+        end_points['conv4'] = net
         net = slim.max_pool2d(net, [2, 2], scope='pool4')  # 19
         # Block 5.
         net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv5')  # 19
@@ -268,9 +273,8 @@ def text_net(inputs,
         end_points['conv6'] = net
         # Block 7: 1x1 conv. Because the fuck.
         net = slim.conv2d(net, 1024, [1, 1], scope='conv7')  # 19
-        end_point = 'conv7'
-
-        end_points[end_point] = net
+        ###end_point = 'conv7'
+        end_points['conv7'] = net
 
         # Block 8/9/10/11: 1x1 and 3x3 convolutions stride 2
         end_point = 'conv8'
@@ -278,26 +282,25 @@ def text_net(inputs,
             net = slim.conv2d(net, 256, [1, 1], scope='conv1x1')
             net = custom_layers.pad2d(net, pad=(1, 1))
             net = slim.conv2d(net, 512, [3, 3], stride=2, scope='conv3x3', padding='VALID')
-
         end_points[end_point] = net  # 10
+
         end_point = 'conv9'
         with tf.variable_scope(end_point):
             net = slim.conv2d(net, 128, [1, 1], scope='conv1x1')
             net = custom_layers.pad2d(net, pad=(1, 1))
             net = slim.conv2d(net, 256, [3, 3], stride=2, scope='conv3x3', padding='VALID')
-
         end_points[end_point] = net # 5
+
         end_point = 'conv10'
         with tf.variable_scope(end_point):
             net = slim.conv2d(net, 128, [1, 1], scope='conv1x1')
             net = slim.conv2d(net, 256, [3, 3], scope='conv3x3', padding='VALID')
-
         end_points[end_point] = net  # 3
+
         end_point = 'conv11'
         with tf.variable_scope(end_point):
             net = slim.conv2d(net, 128, [1, 1], scope='conv1x1')
             net = slim.conv2d(net, 256, [3, 3], scope='conv3x3', padding='VALID')
-
         end_points[end_point] = net  #
 
         # Prediction and localisations layers.

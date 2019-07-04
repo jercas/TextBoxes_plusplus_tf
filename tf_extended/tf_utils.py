@@ -88,6 +88,7 @@ def print_configuration(flags, ssd_params, data_sources, save_dir=None):
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         path = os.path.join(save_dir, 'training_config.txt')
+        # write down training configuration as log.
         with open(path, "w") as out:
             print_config(out)
 
