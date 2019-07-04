@@ -38,6 +38,7 @@ class TextboxNet(object):
         num_classes=2,
 	    # The 6 intermediate conv layers connected to the 6 Text-box layers.
         feat_layers=['conv4', 'conv7', 'conv8', 'conv9', 'conv10', 'conv11'],
+	    #TODO：feat_shapes is feature map size?
         feat_shapes=[(48, 48), (24, 24), (12, 12), (6, 6), (4, 4), (2, 2)],
 	    # Anchors 48 = 8 ratios * 6 sizes, each textbox layer 8 = 8 ratios * 1 size
 	    # !!! Different anchor ratios setting from the original paper (1,2,3,5,1/2,1/3,1/5)->(2,1/2,3,1/3,4,1/4,5,1/5).
@@ -82,6 +83,7 @@ class TextboxNet(object):
         """
         Text network definition.
         """
+        # r = [predictions, localisations, logits, end_points, shape_list(if update_feat_shapes = True)]
         r = text_net(
             inputs,
             feat_layers=self.params.feat_layers,
@@ -93,7 +95,8 @@ class TextboxNet(object):
             reuse=reuse,
             scope=scope,
             update_feat_shapes=update_feat_shapes)
-        # Update feature shapes (try at least!), stage 2 training start: replace input shape from 384x384->768x768
+        # Update feature shapes (try at least!)
+        # TODO: what's this part means? why change the feature map size?
         if update_feat_shapes:
             shapes = textboxes_feat_shapes_from_net(r[-1],
                                                     self.params.feat_shapes)
@@ -124,9 +127,9 @@ class TextboxNet(object):
     def anchors(self, img_shape, dtype=np.float32):
         """Compute the default anchor boxes, given an image shape.
         """
-        return textbox_achor_all_layers(
-            img_shape, self.params.feat_shapes, self.params.anchor_ratios,self.params.anchor_sizes, 
-            self.params.anchor_steps, 0.5, dtype)
+        return textbox_anchor_all_layers(
+            img_shape, self.params.feat_shapes, self.params.anchor_ratios,
+	        self.params.anchor_sizes, self.params.anchor_steps, 0.5, dtype)
 
     def bboxes_encode(self,
                       glabels,
@@ -177,9 +180,10 @@ class TextboxNet(object):
 
 def textboxes_feat_shapes_from_net(predictions, default_shapes=None):
     """Try to obtain the feature shapes from the prediction layers.
+    Args:
+      predictions: a list of feature shapes return from text_net()
     Return:
-      list of feature shapes. Default values if predictions shape not fully
-      determined.
+      list of feature shapes. Default values if predictions shape not fully determined.
     """
     feat_shapes = []
     for l in predictions:
@@ -358,6 +362,7 @@ def textbox_anchor_one_layer(img_shape,
                              dtype=np.float32):
     # Follow the papers scheme
     # 12 ahchor boxes with out sk' = sqrt(sk * sk+1)
+    ### minimum horizontal bounding box offsets 4 + quadrilateral bounding box offsets 8 = 12
 
     y, x = np.mgrid[0:feat_size[0], 0:feat_size[1]] + offset
 
@@ -434,7 +439,7 @@ def ssd_arg_scope(weight_decay=0.0005, data_format='NHWC'):
                 return sc
 
 
-def textbox_achor_all_layers(img_shape,
+def textbox_anchor_all_layers(img_shape,
                              layers_shape,
                              anchor_ratios,
                              anchor_sizes,
@@ -443,6 +448,13 @@ def textbox_achor_all_layers(img_shape,
                              dtype=np.float32):
     """
     Compute anchor boxes for all feature layers.
+
+    Args:
+		offset: vertical offset which used to cover all text and
+			makes the anchors dense in the vertical orientation.
+
+	Return:
+		the anchors list
     """
     layers_anchors = []
     for i, s in enumerate(layers_shape):
