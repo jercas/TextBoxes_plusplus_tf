@@ -25,7 +25,8 @@ wheels/
 *.egg
 MANIFEST
 .idea/*
-ICDAR_15/*
+*/ICDAR_15/*
+*/synth_pre_ckpt/*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
