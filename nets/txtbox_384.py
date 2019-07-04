@@ -39,7 +39,7 @@ class TextboxNet(object):
 	    # The 6 intermediate conv layers connected to the 6 Text-box layers.
         feat_layers=['conv4', 'conv7', 'conv8', 'conv9', 'conv10', 'conv11'],
         feat_shapes=[(48, 48), (24, 24), (12, 12), (6, 6), (4, 4), (2, 2)],
-	    # Anchors 48 = 8 ratios * 6 sizes
+	    # Anchors 48 = 8 ratios * 6 sizes, each textbox layer 8 = 8 ratios * 1 size
 	    # !!! Different anchor ratios setting from the original paper (1,2,3,5,1/2,1/3,1/5)->(2,1/2,3,1/3,4,1/4,5,1/5).
         anchor_ratios=[
             [2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
@@ -102,12 +102,12 @@ class TextboxNet(object):
         return r
 
     def arg_scope(self, weight_decay=0.0005, data_format='NHWC'):
-        """Network arg_scope.
+        """Get the defined Network arg_scope Encapsulation.
         """
         return ssd_arg_scope(weight_decay, data_format=data_format)
 
     def arg_scope_caffe(self, caffe_scope):
-        """Caffe arg_scope used for weights importing.
+        """Get the defined Caffe arg_scope Encapsulation used for weights importing.
         """
         return ssd_arg_scope_caffe(caffe_scope)
 
@@ -209,20 +209,24 @@ def text_multibox_layer(layer,
     net = inputs
     if normalization > 0:
         net = custom_layers.l2_normalization(net, scaling=True)
-    # Number of anchors.
+    # Number of anchors, 8+2.
     num_anchors = len(anchor_ratio) + len(anchor_size)
+    # Text classification scores / conference.
     num_classes = 2
-    # location 4+8
-    num_prior_per_location = 2 * num_anchors
-    num_loc_pred = num_prior_per_location* 12
+    # Vertical offsets.
+    num_prior_per_location = num_anchors * 2
+
+    # Location prediction.
+    # Location 4+8, minimum horizontal bounding box offsets 4 + quadrilateral bounding box offsets 8 = 12.
+    num_loc_pred = num_prior_per_location * 12
     # num_loc_pred = num_prior_per_location * 4
-    #240/12 = 20 = num_prior_per_location
     loc_pred = slim.conv2d(net, num_loc_pred, [3, 5], activation_fn=None, padding='SAME', scope='conv_loc')
     # loc_pred = custom_layers.channel_to_last(loc_pred)
     loc_pred = slim.flatten(loc_pred)
     l_shape = loc_pred.shape
     batch_size = l_shape[0]
     loc_pred = tf.reshape(loc_pred, [batch_size, -1, 12])
+
     # Class prediction.
     scores_pred = num_prior_per_location * num_classes
     sco_pred = slim.conv2d(net, scores_pred, [3, 5], activation_fn=None, padding='SAME',scope='conv_cls')
@@ -258,9 +262,9 @@ def text_net(inputs,
         end_points['conv3'] = net
         net = slim.max_pool2d(net, [2, 2], scope='pool3')  # 38
         # Block 4.
+        end_point = 'conv4'
         net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv4')  # 38 40
-        ###end_point = 'conv4'
-        end_points['conv4'] = net
+        end_points[end_point] = net
         net = slim.max_pool2d(net, [2, 2], scope='pool4')  # 19
         # Block 5.
         net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv5')  # 19
@@ -268,13 +272,13 @@ def text_net(inputs,
         net = slim.max_pool2d(net, [3, 3], stride=1, scope='pool5')  # 19
 
         # Additional SSD blocks.
-        # Block 6: let's dilate the hell out of it!
+        # Block 6: let's dilate the hell out of it!  dilation -> 6
         net = slim.conv2d(net, 1024, [3, 3], rate=6, scope='conv6')  # 19
         end_points['conv6'] = net
         # Block 7: 1x1 conv. Because the fuck.
+        end_point = 'conv7'
         net = slim.conv2d(net, 1024, [1, 1], scope='conv7')  # 19
-        ###end_point = 'conv7'
-        end_points['conv7'] = net
+        end_points[end_point] = net
 
         # Block 8/9/10/11: 1x1 and 3x3 convolutions stride 2
         end_point = 'conv8'
@@ -316,6 +320,7 @@ def text_net(inputs,
                                              anchor_ratios[i],
                                              normalizations[i])
             prediction_fn = slim.softmax
+            # Prediction of conference and bbox location of each textbox layer.
             predictions.append(prediction_fn(p))
             logits.append(p)
             localisations.append(loc)
