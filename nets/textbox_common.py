@@ -224,7 +224,6 @@ def tf_text_bboxes_encode_layer(glabels, bboxes,gxs , gys,
 	这里的逻辑是用gt的外接水平矩形框与anchor/default box做匹配，得到iou的mask之后更新anchor对应的gt
 	然后求取anchor对应gt的偏移
 	'''
-	#
 	# feat_ymax = tf.Print(feat_ymax, [tf.shape(feat_ymax), tf.count_nonzero(feat_ymax), feat_ymax], message= ' feat_ymax :', summarize=100)
 	# feat_ymin = tf.Print(feat_ymin, [tf.shape(feat_ymin), tf.count_nonzero(feat_ymin), feat_ymin], message= ' feat_ymin :', summarize=100)
 	# feat_xmax = tf.Print(feat_xmax, [tf.shape(feat_xmax), tf.count_nonzero(feat_xmax), feat_xmax], message= ' feat_xmax : ', summarize=100)
@@ -238,11 +237,7 @@ def tf_text_bboxes_encode_layer(glabels, bboxes,gxs , gys,
 
 	# feat_ymin = tf.Print(feat_ymin, [tf.shape(feat_ymin), feat_ymin], message= ' feat_ymin : ', summarize=20)
 	# feat_xmin = tf.Print(feat_xmin, [tf.shape(feat_xmin), feat_xmin], message= ' feat_xmin : ', summarize=20)
-
 	#
-
-
-
 	# feat_cy = tf.Print(feat_cy, [tf.shape(feat_cy), feat_cy],message=' feat_cy : ', summarize=20)
 	# feat_cx = tf.Print(feat_cx, [tf.shape(feat_cx), feat_cx],message=' feat_cy : ', summarize=20)
 	# feat_h = tf.Print(feat_h, [tf.shape(feat_h), feat_h], message=' feat_h : ', summarize=20)
@@ -250,17 +245,14 @@ def tf_text_bboxes_encode_layer(glabels, bboxes,gxs , gys,
 	#
 	# yref = tf.Print(yref, [tf.shape(yref), yref], message=' yref : ',summarize=20)
 	# xref = tf.Print(xref, [tf.shape(xref), xref], message=' xref : ',summarize=20)
-	# href = tf.Print(href, [tf.shape(href), href], message=' href : ',
-	#                 summarize=20)
+	# href = tf.Print(href, [tf.shape(href), href], message=' href : ',summarize=20)
 	# wref = tf.Print(wref, [tf.shape(wref), wref], message=' wref : ', summarize=20)
 
 	feat_ymin = (feat_cy - yref) / href / prior_scaling[1]
 	feat_xmin = (feat_cx - xref) / wref / prior_scaling[0]
 
-
 	feat_ymax = tf.log(feat_h / href) / prior_scaling[3]
 	feat_xmax = tf.log(feat_w / wref) / prior_scaling[2]
-
 
 	feat_x1 = (feat_x1 - xmin) / wref / prior_scaling[0]
 	feat_x2 = (feat_x2 - xmax) / wref / prior_scaling[0]
@@ -281,7 +273,6 @@ def tf_text_bboxes_encode_layer(glabels, bboxes,gxs , gys,
 	feat_localizations = tf.stack([feat_xmin, feat_ymin, feat_xmax, feat_ymax ,feat_x1, feat_y1, feat_x2, feat_y2, feat_x3, feat_y3, feat_x4, feat_y4], axis=-1)
 	# feat_localizations = tf.Print(feat_localizations, [tf.shape(feat_localizations), feat_localizations], message=' feat_localizations: ', summarize=20)
 	return feat_labels, feat_localizations, feat_scores
-
 
 
 def tf_text_bboxes_encode(glabels, bboxes,

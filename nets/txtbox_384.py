@@ -520,9 +520,9 @@ def ssd_losses(logits,
 	'''Loss functions for training the text box network.
 	Arguments:
 	  logits: (list of) predictions logits Tensors;                x
-	  localisations: (list of) localisations Tensors;              l
+	  localisations: (list of) predictions localisations Tensors;  l
 	  glocalisations: (list of) groundtruth localisations Tensors; g
-	  gscores: (list of) groundtruth score Tensors;                c
+	  gscores: (list of) groundtruth score / conference Tensors;   c
 	'''
 	# from ssd loss
 	with tf.name_scope(scope, 'txt_losses'):
@@ -540,12 +540,14 @@ def ssd_losses(logits,
 		flocalisations = []
 		fglocalisations = []
 		fglabels = []
+		# Transform all matrix to vector.
 		for i in range(len(logits)):
 			flogits.append(tf.reshape(logits[i], [-1, num_classes]))
 			fgscores.append(tf.reshape(gscores[i], [-1]))
 			fglabels.append(tf.reshape(glabels[i], [-1]))
 			flocalisations.append(tf.reshape(localisations[i], [-1, 12]))
 			fglocalisations.append(tf.reshape(glocalisations[i], [-1, 12]))
+
 		# And concat the crap!
 		glabels = tf.concat(fglabels, axis=0)
 		logits = tf.concat(flogits, axis=0)  # x
