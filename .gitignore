@@ -26,7 +26,8 @@ wheels/
 MANIFEST
 .idea/*
 */ICDAR_15/*
-*/synth_pre_ckpt/*
+model/*
+*/ckpt/*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

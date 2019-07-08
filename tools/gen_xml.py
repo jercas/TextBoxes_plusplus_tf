@@ -1,6 +1,6 @@
 from __future__ import print_function
 import os
-from lxml import etree
+#from lxml import etree
 import xml.dom.minidom
 import sys
 import random
@@ -177,7 +177,7 @@ def get_all_txt(directory, new_version=False):
 if  __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='icdar15 generate xml tools')
-    parser.add_argument('--in_dir','-i', default='/home/zsz/datasets/icdar15_anno/eval_img_2018.9.25/icdar15_eval_final', type=str)
+    parser.add_argument('--in_dir','-i', default='./datasets/ICDAR_15/textLocalization/train/gt', type=str)
     args = parser.parse_args()
     directory = args.in_dir
     get_all_txt(directory, False)
