@@ -156,7 +156,7 @@ def process_convert(txt_name, DIRECTORY_ANNOTATIONS, new_version=True):
     
 
     
-    xml_path = os.path.join(DIRECTORY_ANNOTATIONS, txt_name[0:-4] + '.xml')
+    xml_path = os.path.join(DIRECTORY_ANNOTATIONS, txt_name[:-4] + '.xml')
     fp = open(xml_path, 'w')
     annotation_xml.writexml(fp, indent='\t', addindent='\t', newl='\n', encoding="utf-8")
 
@@ -180,4 +180,4 @@ if  __name__ == '__main__':
     parser.add_argument('--in_dir','-i', default='./datasets/ICDAR_15/textLocalization/train', type=str)
     args = parser.parse_args()
     directory = args.in_dir
-    get_all_txt(directory, False)
+    get_all_txt(directory, True)
