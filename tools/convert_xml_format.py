@@ -52,7 +52,7 @@ def process_convert(name, DIRECTORY_ANNOTATIONS, img_path, save_xml_path):
 	for obj in root.findall('object'):
 		difficult = int(obj.find('difficult').text)
 		content = obj.find('name').text
-		content = content.replace('\t', '  ')
+		content = content.replace('\t', ' ')
 
 		#if int(difficult) == 1 and content == '&amp;*@HUST_special':
 		'''
