@@ -26,11 +26,9 @@ def process_convert(txt_name, DIRECTORY_ANNOTATIONS, new_version=True):
     root.appendChild(nodeFolder)
 
     nodeFilename = annotation_xml.createElement('filename')
-    nodeFilename.appendChild(annotation_xml.createTextNode(filename))
+    nodeFilename.appendChild(annotation_xml.createTextNode(txt_name[3:-4]))
     root.appendChild(nodeFilename)
 
-    #img_name = filename[3:-4]
-    print(img_name)
     if cv2.imread(img_name) is not None:
         h, w, c = cv2.imread(img_name).shape
     else:
