@@ -13,6 +13,7 @@ def process_convert(txt_name, DIRECTORY_ANNOTATIONS, new_version=True):
     
     # Read the txt annotation file.
     filename = os.path.join(DIRECTORY_ANNOTATIONS, txt_name)
+    img_name  = os.path.join(DIRECTORY_ANNOTATIONS[:-3], txt_name[3:-4]+'.jpg')
     with codecs.open(filename, 'r', encoding='utf-8') as f:
         lines = f.readlines()
     
@@ -28,7 +29,8 @@ def process_convert(txt_name, DIRECTORY_ANNOTATIONS, new_version=True):
     nodeFilename.appendChild(annotation_xml.createTextNode(filename))
     root.appendChild(nodeFilename)
 
-    img_name = filename[:-4]
+    #img_name = filename[3:-4]
+    print(img_name)
     if cv2.imread(img_name) is not None:
         h, w, c = cv2.imread(img_name).shape
     else:
@@ -177,7 +179,7 @@ def get_all_txt(directory, new_version=False):
 if  __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='icdar15 generate xml tools')
-    parser.add_argument('--in_dir','-i', default='./datasets/ICDAR_15/textLocalization/train/gt', type=str)
+    parser.add_argument('--in_dir','-i', default='./datasets/ICDAR_15/textLocalization/train', type=str)
     args = parser.parse_args()
     directory = args.in_dir
     get_all_txt(directory, False)
