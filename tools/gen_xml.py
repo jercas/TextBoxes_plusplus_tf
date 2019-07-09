@@ -6,14 +6,14 @@ import codecs
 import xml.dom.minidom
 
 
-def process_convert(rootName, txtName, GT_Type=False):
+def process_convert(rootName, txtName, output_dir, GT_Type=False):
 
 	# Read the txt annotation file.
-	filename = os.path.join(rootName, txtName)
+	file_name = os.path.join(rootName, txtName)
 	image = txtName[3:-4] + '.jpg'
 	img_name  = os.path.join(rootName[:-3], image)
 
-	with codecs.open(filename, 'r', encoding='utf-8') as f:
+	with codecs.open(file_name, 'r', encoding='utf-8') as f:
 		lines = f.readlines()
 
 	annotation_xml = xml.dom.minidom.Document()
@@ -165,9 +165,10 @@ def process_convert(rootName, txtName, GT_Type=False):
 		root.appendChild(nodeObject)
 		#</object>
 
-	xml_path = os.path.join(rootName, txtName[:-4] + '.xml')
+	xml_path = os.path.join(output_dir, txtName[:-4] + '.xml')
 	fp = open(xml_path, 'w')
 	annotation_xml.writexml(fp, indent='\t', addindent='\t', newl='\n', encoding="utf-8")
+	return True
 
 
 def get_all_txt(directory, split_flag, logs_dir, output_dir, GT_Type=False):
@@ -190,7 +191,7 @@ def get_all_txt(directory, split_flag, logs_dir, output_dir, GT_Type=False):
 				else:
 					save_xml_path = xml_path
 
-				if process_convert(root, each, GT_Type):
+				if process_convert(root, each, output_dir,GT_Type):
 					xml_path_list.append('{},{}\n'.format(img_path, save_xml_path))
 					img_path_list.append('{}\n'.format(img_path))
 				count += 1
@@ -214,15 +215,16 @@ def save_to_text(img_path_list, xml_path_list, count, split_flag, logs_dir):
 	with codecs.open(
 			os.path.join(logs_dir, 'train_xml.txt'), 'w', encoding='utf-8') as f_xml, codecs.open(
 				os.path.join(logs_dir, 'train.txt'), 'w', encoding='utf-8') as f_txt:
-		f_xml.writelines(xml_path_list[:train_num])
-		f_txt.writelines(img_path_list[:train_num])
+					f_xml.writelines(xml_path_list[:train_num])
+					f_txt.writelines(img_path_list[:train_num])
 
 	if split_flag == 'yes':
+		print('test img count {0}'.format(count - train_num))
 		with codecs.open(
 				os.path.join(logs_dir, 'test_xml.txt'), 'w', encoding='utf-8') as f_xml, codecs.open(
 					os.path.join(logs_dir, 'test.txt'), 'w', encoding='utf-8') as f_txt:
-			f_xml.writelines(xml_path_list[train_num:])
-			f_txt.writelines(img_path_list[train_num:])
+						f_xml.writelines(xml_path_list[train_num:])
+						f_txt.writelines(img_path_list[train_num:])
 
 
 if  __name__ == '__main__':
