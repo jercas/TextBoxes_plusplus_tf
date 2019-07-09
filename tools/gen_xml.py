@@ -31,7 +31,7 @@ def process_convert(rootName, txtName, GT_Type=False):
 
 	image = cv2.imread(img_name)
 	if image is not None:
-		print(image)
+		#print(image)
 		h, w, c = image.shape
 	else:
 		raise KeyError('img_name error:', img_name)
@@ -53,7 +53,7 @@ def process_convert(rootName, txtName, GT_Type=False):
 	for l in lines:
 		l = l.encode('utf-8').decode('utf-8-sig')
 		l = l.strip().split(',')
-		#print(l)
+		print(l)
 		label_name = str(l[-1])
 		if label_name == '###':
 			difficult = 1
