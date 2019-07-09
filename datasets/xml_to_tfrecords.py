@@ -16,20 +16,12 @@ TXT_LABELS = {
 }
 
 def _process_image(train_img_path, train_xml_path, name):
-    """Process a image and annotation file.
-
-    Args:
-      filename: string, path to an image file e.g., '/path/to/example.JPG'.
-      coder: instance of ImageCoder to provide TensorFlow image coding utils.
-    Returns:
-      image_buffer: string, JPEG encoding of RGB image.
-      height: integer, image height in pixels.
-      width: integer, image width in pixels.
-    """
+    """Process a image and annotation file."""
     # Read the image file.
-
+    print(train_img_path, train_xml_path)
     image_data = tf.gfile.FastGFile(train_img_path, 'rb').read()
-
+    print(image_data)
+	#TODO: error, not well-formed (invalid token)
     tree = ET.parse(train_xml_path)
     root = tree.getroot()
     # Image shape.
@@ -188,7 +180,7 @@ def _add_to_tfrecord(train_img_path, train_xml_path , name, tfrecord_writer):
       tfrecord_writer: The TFRecord writer to use for writing.
     """
     image_data, shape, bboxes, labels, labels_text, difficult, truncated, oriented_bbox, ignored, filename = \
-        _process_image(train_img_path, train_xml_path , name)
+        _process_image(train_img_path, train_xml_path, name)
     example = _convert_to_example(image_data, labels, labels_text,
                                   bboxes, shape, difficult, truncated, oriented_bbox, ignored, filename)
     tfrecord_writer.write(example.SerializeToString())
@@ -210,6 +202,7 @@ def run(xml_img_txt_path, output_dir, name='icdar15_annotated_data', samples_per
     train_xml_path = []
     error_list = []
     count = 0
+
     for line in lines:
         line = line.strip()
         if len(line.split(',')) == 2:
@@ -218,25 +211,26 @@ def run(xml_img_txt_path, output_dir, name='icdar15_annotated_data', samples_per
             train_xml_path.append(line.split(',')[1])
         else:
             error_list.append(line)
-            # print('line:',line)
-    with open(os.path.join(output_dir, 'create_tfrecord_error_list.txt'), 'w') as f:
+            print('line split error:',line)
+    with open(os.path.join(output_dir, 'create_tfrecord_error_lines_list.txt'), 'w') as f:
         f.writelines(error_list)
-    filenames = train_img_path
+
 
     # Process dataset files
     i = 0
     fidx = 0
-    while i < len(filenames):
-        #Open new TFRecord file.
+    while i < len(train_img_path):
+        # Open new TFRecord file.
+        # '%s/%s_%03d.tfrecord' % (output_dir, name, idx)
         tf_filename = _get_output_filename(output_dir, name, fidx)
 
         with tf.python_io.TFRecordWriter(tf_filename) as tfrecord_writer:
             j = 0
-            while i < len(filenames) and j < samples_per_files:
-                sys.stdout.write('\r>> Converting image %d/%d' % (i+1, len(filenames)))
+            while i < len(train_img_path) and j < samples_per_files:
+                sys.stdout.write('\r>> Converting image %d/%d' % (i+1, len(train_img_path)))
                 sys.stdout.flush()
 
-                filename = filenames[i]
+                filename = train_img_path[i]
                 img_name = filename.split('/')[-1][:-4]
                 _add_to_tfrecord(filename, train_xml_path[i], img_name, tfrecord_writer)
                 i += 1

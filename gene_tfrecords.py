@@ -6,10 +6,12 @@ import os
 
 tf.app.flags.DEFINE_string(
     'output_name', 'annotated_data',
-    'Basename used for TFRecords output files.')
+    'Basename used for TFRecords output files.'
+)
 tf.app.flags.DEFINE_string(
     'output_dir', 'tfrecords',
-    'Output directory where to store TFRecords files.')
+    'Output directory where to store TFRecords files.'
+)
 tf.app.flags.DEFINE_string(
     'xml_img_txt_path', None,
     'the path means the txt'
