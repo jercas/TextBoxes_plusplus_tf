@@ -61,11 +61,10 @@ def process_convert(rootName, txtName, GT_Type=False):
 		#difficult = 0
 		#label = 1
 		label_name = str(l[-1])
-		if label_name == 'none':
+		if label_name == '###':
 			difficult = 1
 		else:
 			difficult = 0
-		label = label_name
 		x1_text = ''
 		x2_text = ''
 		x3_text = ''
@@ -118,9 +117,15 @@ def process_convert(rootName, txtName, GT_Type=False):
 		nodeDifficult.appendChild(annotation_xml.createTextNode(str(difficult)))
 		nodeObject.appendChild(nodeDifficult)
 		#</difficult>
+		#<content>
+		nodeContent = annotation_xml.createElement('content')
+		nodeContent.appendChild(annotation_xml.createTextNode(label_name))
+		nodeObject.appendChild(nodeContent)
+		#</content>
 		#<name>
 		nodeName = annotation_xml.createElement('name')
-		nodeName.appendChild(annotation_xml.createTextNode(str(label)))
+		name = 'text' if difficult == 0 else 'none'
+		nodeName.appendChild(annotation_xml.createTextNode(name))
 		nodeObject.appendChild(nodeName)
 		#</name>
 		#<bndbox>
@@ -144,7 +149,6 @@ def process_convert(rootName, txtName, GT_Type=False):
 		nodex4 = annotation_xml.createElement('x4')
 		nodex4.appendChild(annotation_xml.createTextNode(x4_text))
 
-
 		nodey1 = annotation_xml.createElement('y1')
 		nodey1.appendChild(annotation_xml.createTextNode(y1_text))
 		nodey2 = annotation_xml.createElement('y2')
@@ -154,19 +158,19 @@ def process_convert(rootName, txtName, GT_Type=False):
 		nodey4 = annotation_xml.createElement('y4')
 		nodey4.appendChild(annotation_xml.createTextNode(y4_text))
 
-		nodeBndbox.appendChild(nodexmin)
-		nodeBndbox.appendChild(nodeymin)
-		nodeBndbox.appendChild(nodexmax)
-		nodeBndbox.appendChild(nodeymax)
 		nodeBndbox.appendChild(nodex1)
 		nodeBndbox.appendChild(nodex2)
 		nodeBndbox.appendChild(nodex3)
 		nodeBndbox.appendChild(nodex4)
-
 		nodeBndbox.appendChild(nodey1)
 		nodeBndbox.appendChild(nodey2)
 		nodeBndbox.appendChild(nodey3)
 		nodeBndbox.appendChild(nodey4)
+		nodeBndbox.appendChild(nodexmin)
+		nodeBndbox.appendChild(nodeymin)
+		nodeBndbox.appendChild(nodexmax)
+		nodeBndbox.appendChild(nodeymax)
+
 		#<coordinates x1, y1, x2, y2, x3, y3, x4, y4, xmin, ymin, xmax, ymax>
 		nodeObject.appendChild(nodeBndbox)
 		#</bndbox>
