@@ -1,10 +1,6 @@
 from __future__ import print_function
 import os
-#from lxml import etree
 import xml.dom.minidom
-import sys
-import random
-import numpy as np
 import codecs 
 import cv2
 
@@ -57,22 +53,12 @@ def process_convert(rootName, txtName, GT_Type=False):
 	for l in lines:
 		l = l.encode('utf-8').decode('utf-8-sig')
 		l = l.strip().split(',')
-		print(l)
-		#difficult = 0
-		#label = 1
+		#print(l)
 		label_name = str(l[-1])
 		if label_name == '###':
 			difficult = 1
 		else:
 			difficult = 0
-		x1_text = ''
-		x2_text = ''
-		x3_text = ''
-		x4_text = ''
-		y1_text = ''
-		y2_text = ''
-		y3_text = ''
-		y4_text = ''
 
 		if GT_Type is True:
 			# r0 = (xr01; yr01; xr02; yr02; hr0), rotated rectangle - GT
@@ -189,7 +175,6 @@ def get_all_txt(directory, GT_Type=False):
 			if each.split('.')[-1] == 'txt':
 				count += 1
 				print(count, each)
-
 				process_convert(root, each, GT_Type)
 
 
