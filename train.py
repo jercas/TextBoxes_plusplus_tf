@@ -198,7 +198,7 @@ tf.app.flags.DEFINE_integer(
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
     #'checkpoint_path','/home/zsz/code/TextBoxes_plusplus_Tensorflow/model/vgg_fc_16_model/vgg_16.ckpt',
-    'checkpoint_path', './models/ckpt',
+    'checkpoint_path', './models/checkpoint',
     'The path to a checkpoint from which to fine-tune.')
 tf.app.flags.DEFINE_string(
     'checkpoint_model_scope', None,
