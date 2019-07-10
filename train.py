@@ -51,8 +51,8 @@ tf.app.flags.DEFINE_boolean(
 # train & deploy Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
-	'train_dir', './tfrecords',
-    'Directory where tfrecords file are stored.')
+	'train_dir', './model/ckpt',
+    'Directory where checkpoints and event logs are written to.')
 # TODO:GPU number configuration
 tf.app.flags.DEFINE_integer(
 	'num_clones', 1,
@@ -167,7 +167,7 @@ tf.app.flags.DEFINE_string(
 	'dataset_split_name', 'train',
     'The name of the train/test split.')
 tf.app.flags.DEFINE_string(
-    'dataset_dir', './datasets/ICDAR_15/textLocalization/train',
+    'dataset_dir', './tfrecords',
     ' The directory where the dataset files are stored.')
 tf.app.flags.DEFINE_integer(
     'labels_offset', 0,
