@@ -186,7 +186,7 @@ def _add_to_tfrecord(train_img_path, train_xml_path , name, tfrecord_writer):
 	tfrecord_writer.write(example.SerializeToString())
 
 
-def run(xml_img_txt_path, output_dir, name='icdar15_annotated_data', samples_per_files=200):
+def run(xml_img_txt_path, output_dir, output_name='icdar15_annotated_data', samples_per_files=200):
 	"""Runs the conversion operation.
 	Args:
 	  xml_img_txt_path: The txt stored where the dataset is stored.
@@ -223,7 +223,7 @@ def run(xml_img_txt_path, output_dir, name='icdar15_annotated_data', samples_per
 		# Open new TFRecord file.
 		#TODO: path error?
 		# '%s/%s_%03d.tfrecord' % (output_dir, name, idx)
-		tf_filename = _get_output_filename(output_dir, name, fidx)
+		tf_filename = _get_output_filename(output_dir, output_name, fidx)
 
 		with tf.python_io.TFRecordWriter(tf_filename) as tfrecord_writer:
 			j = 0
