@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 
-from datasets import xml_to_tfrecords
+from datasets import xml2TFRecords
 import os
 """
 usage:
-python gene_tfrecords.py --xml_img_txt_path=./logs/train_xml.txt --output_dir=tfrecords --output_name=annotated_data
+python geneTFrecords.py --xml_img_txt_path=./logs/train_xml.txt --output_dir=tfrecords --output_name=annotated_data
     samples_per_files=2000
 """
 
@@ -33,7 +33,7 @@ def main(_):
     print('Dataset directory:', FLAGS.xml_img_txt_path)
     print('Output directory:', FLAGS.output_dir)
 
-    xml_to_tfrecords.run(FLAGS.xml_img_txt_path, FLAGS.output_dir, FLAGS.output_name, FLAGS.samples_per_files)
+    xml2TFRecords.run(FLAGS.xml_img_txt_path, FLAGS.output_dir, FLAGS.output_name, FLAGS.samples_per_files)
 
 if __name__ == '__main__':
     tf.app.run()

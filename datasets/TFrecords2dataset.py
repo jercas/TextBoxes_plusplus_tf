@@ -1,7 +1,6 @@
 ## an initial version
 ## Transform the tfrecord to slim data provider format
 
-import numpy 
 import tensorflow as tf
 import os
 import tensorflow.contrib.slim as slim
@@ -14,8 +13,9 @@ ITEMS_TO_DESCRIPTIONS = {
     'object/label': 'A list of labels, one per each object.',
 }
 SPLITS_TO_SIZES = {
-    #'train': 2518, for ppt datasets
-    'train': 858750 # for synth text datasets
+    #'train': 2518 # for ppt datasets
+    #'train': 858750 # for synth text datasets
+    'train': 1000 # for icdat 2015 datasets
 }
 def get_datasets(data_dir, file_pattern = '*.tfrecord'):
     file_patterns = os.path.join(data_dir, file_pattern)
@@ -71,6 +71,7 @@ def get_datasets(data_dir, file_pattern = '*.tfrecord'):
     decoder = slim.tfexample_decoder.TFExampleDecoder(keys_to_features, items_to_handlers)
 
     labels_to_names = {0:'background', 1:'text'}
+
     return slim.dataset.Dataset(
         data_sources=file_patterns,
         reader=reader,

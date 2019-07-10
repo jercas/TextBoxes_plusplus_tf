@@ -1,4 +1,4 @@
-from datasets import sythtextprovider
+from datasets import TFrecords2dataset
 import tensorflow as tf
 import numpy as np
 import cv2
@@ -57,7 +57,7 @@ def run():
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     with tf.device('/GPU:0'):
-        dataset = sythtextprovider.get_datasets(FLAGS.dataset_dir)
+        dataset = TFrecords2dataset.get_datasets(FLAGS.dataset_dir)
         print(dataset)
         provider = slim.dataset_data_provider.DatasetDataProvider(
                         dataset,

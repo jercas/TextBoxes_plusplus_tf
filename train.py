@@ -17,7 +17,7 @@
 import tensorflow as tf
 from tensorflow.python.ops import control_flow_ops
 
-from datasets import sythtextprovider
+from datasets import TFrecords2dataset
 from deployment import model_deploy
 from nets import txtbox_384, txtbox_768
 from processing import ssd_vgg_preprocessing
@@ -240,7 +240,7 @@ def main(_):
             global_step = slim.create_global_step()
 
         # Select the dataset.
-        dataset = sythtextprovider.get_datasets(FLAGS.dataset_dir)
+        dataset = TFrecords2dataset.get_datasets(FLAGS.dataset_dir)
 
         # Get the TextBoxes++ network and its anchors.
         text_net = txtbox_384.TextboxNet()
