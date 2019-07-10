@@ -51,8 +51,8 @@ tf.app.flags.DEFINE_boolean(
 # train & deploy Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
-	'train_dir', './model/ckpt',
-    'Directory where checkpoints/ckpt and event logs are written to.')
+	'train_dir', './tfrecords',
+    'Directory where tfrecords file are stored.')
 # TODO:GPU number configuration
 tf.app.flags.DEFINE_integer(
 	'num_clones', 1,

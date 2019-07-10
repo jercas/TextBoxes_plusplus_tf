@@ -7,8 +7,6 @@ import os
 import tensorflow.contrib.slim as slim
 import glob
 
-
-
 ITEMS_TO_DESCRIPTIONS = {
     'image': 'A color image of varying height and width.',
     'shape': 'Shape of the image',
@@ -19,7 +17,7 @@ SPLITS_TO_SIZES = {
     #'train': 2518, for ppt datasets
     'train': 858750 # for synth text datasets
 }
-def get_datasets(data_dir,file_pattern = '*.tfrecord'):
+def get_datasets(data_dir, file_pattern = '*.tfrecord'):
     file_patterns = os.path.join(data_dir, file_pattern)
     print('file_path: {}'.format(file_patterns))
     file_path_list = glob.glob(file_patterns)
