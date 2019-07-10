@@ -26,10 +26,11 @@ from tf_extended import tf_utils
 import os
 import tensorflow.contrib.slim as slim
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+# make all the gpus visible
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 # =========================================================================== #
-# Text Network flags.
+# Textboxes++ Network flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_float(
 	'loss_alpha', 0.2,
@@ -47,14 +48,14 @@ tf.app.flags.DEFINE_boolean(
 	'large_training', False,
 	'Use 768 to train')
 # =========================================================================== #
-# General Flags.
+# train & deploy Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
 	'train_dir', './model/ckpt',
     'Directory where checkpoints/ckpt and event logs are written to.')
 # TODO:GPU number configuration
 tf.app.flags.DEFINE_integer(
-	'num_clones', 2,
+	'num_clones', 1,
     'Number of model clones to deploy.')
 tf.app.flags.DEFINE_boolean(
 	'clone_on_cpu', False,
@@ -75,8 +76,12 @@ tf.app.flags.DEFINE_integer(
 	'save_interval_secs', 1200,
     'The frequency with which the model is saved, in seconds.')
 tf.app.flags.DEFINE_float(
-	'gpu_memory_fraction', 0.9,
+	'gpu_memory_fraction', 0.6,
 	'GPU memory fraction to use.')
+tf.app.flags.DEFINE_boolean(
+    'allow_growth', True,
+    'allow the GPU memory growth according to demand'
+)
 
 # =========================================================================== #
 # Optimization Flags.
@@ -153,7 +158,7 @@ tf.app.flags.DEFINE_float(
 # Dataset Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
-	'dataset_name', 'sythtext',
+	'dataset_name', 'icdar2015',
     'The name of the dataset to load.')
 tf.app.flags.DEFINE_integer(
 	'num_classes', 2,
@@ -162,7 +167,7 @@ tf.app.flags.DEFINE_string(
 	'dataset_split_name', 'train',
     'The name of the train/test split.')
 tf.app.flags.DEFINE_string(
-    'dataset_dir', 'icdar15_tf',
+    'dataset_dir', './datasets/ICDAR_15/textLocalization/train',
     ' The directory where the dataset files are stored.')
 tf.app.flags.DEFINE_integer(
     'labels_offset', 0,
@@ -177,7 +182,7 @@ tf.app.flags.DEFINE_string(
     'The name of the preprocessing to use. If left '
     'as `None`, then the model_name flag is used.')
 tf.app.flags.DEFINE_integer(
-	'batch_size', 16,
+	'batch_size', 32,
     'The number of samples in each batch.')
 tf.app.flags.DEFINE_integer(
 	'train_image_size', None,
@@ -193,7 +198,7 @@ tf.app.flags.DEFINE_integer(
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
     #'checkpoint_path','/home/zsz/code/TextBoxes_plusplus_Tensorflow/model/vgg_fc_16_model/vgg_16.ckpt',
-    'checkpoint_path', '/home/zsz/TextBoxes_plusplus/models/ckpt/',
+    'checkpoint_path', './models/ckpt',
     'The path to a checkpoint from which to fine-tune.')
 tf.app.flags.DEFINE_string(
     'checkpoint_model_scope', None,
@@ -209,7 +214,6 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_boolean(
     'ignore_missing_vars', False,
     'When restoring a checkpoint would ignore missing variables.')
-
 FLAGS = tf.app.flags.FLAGS
 
 

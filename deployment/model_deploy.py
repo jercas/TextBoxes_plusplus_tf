@@ -14,16 +14,14 @@
 # ==============================================================================
 """Deploy Slim models across multiple clones and replicas.
 
-# TODO(sguada) docstring paragraph by (a) motivating the need for the file and
-# (b) defining clones.
+# TODO(sguada) docstring paragraph by (a) motivating the need for the file and (b) defining clones.
 
 # TODO(sguada) describe the high-level components of model deployment.
 # E.g. "each model deployment is composed of several parts: a DeploymentConfig,
 # which captures A, B and C, an input_fn which loads data.. etc
 
 To easily train a model on multiple GPUs or across multiple machines this
-module provides a set of helper functions: `create_clones`,
-`optimize_clones` and `deploy`.
+module provides a set of helper functions: `create_clones`, `optimize_clones` and `deploy`.
 
 Usage:
 
@@ -58,14 +56,12 @@ Usage:
     slim.learning.train(model_dp.train_op, my_log_dir,
                                             summary_op=model_dp.summary_op)
 
-The Clone namedtuple holds together the values associated with each call to
-model_fn:
+The Clone namedtuple holds together the values associated with each call to model_fn:
     * outputs: The return values of the calls to `model_fn()`.
     * scope: The scope used to create the clone.
     * device: The device used to create the clone.
 
-DeployedModel namedtuple, holds together the values needed to train multiple
-clones:
+DeployedModel namedtuple, holds together the values needed to train multiple clones:
     * train_op: An operation that run the optimizer training op and include
         all the update ops created by `model_fn`. Present only if an optimizer
         was specified.
@@ -91,8 +87,6 @@ TODO(sguada):
     - which graph collections are altered.
     - write a tutorial on how to use this.
     - analyze the possibility of calling deploy more than once.
-
-
 """
 
 from __future__ import absolute_import
@@ -100,29 +94,23 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
-
 import tensorflow as tf
-
 from tensorflow.python.ops import control_flow_ops
 
 slim = tf.contrib.slim
-
 
 __all__ = ['create_clones',
            'deploy',
            'optimize_clones',
            'DeployedModel',
            'DeploymentConfig',
-           'Clone',
-           ]
-
+           'Clone',]
 
 # Namedtuple used to represent a clone during deployment.
 Clone = collections.namedtuple('Clone',
                                ['outputs',  # Whatever model_fn() returned.
                                 'scope',    # The scope used to create it.
-                                'device',   # The device used to create.
-                                ])
+                                'device'])   # The device used to create.
 
 # Namedtuple used to represent a DeployedModel, returned by deploy().
 DeployedModel = collections.namedtuple('DeployedModel',
