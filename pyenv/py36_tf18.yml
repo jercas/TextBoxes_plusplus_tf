@@ -1,0 +1,98 @@
+name: tf1.8
+channels:
+- https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free
+- https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+- defaults
+dependencies:
+- absl-py=0.7.1=py36_0
+- astor=0.7.1=py36_0
+- gast=0.2.2=py36_0
+- grpcio=1.12.1=py36h1a1b453_0
+- h5py=2.8.0=py36hf7173ca_2
+- hdf5=1.8.20=hac2f561_1
+- icc_rt=2019.0.0=h0cc432a_1
+- keras=2.2.4=0
+- keras-applications=1.0.8=py_0
+- keras-base=2.2.4=py36_0
+- keras-preprocessing=1.1.0=py_1
+- libopencv=3.4.2=h20b85fd_0
+- libpng=1.6.34=h79bbb47_0
+- libprotobuf=3.6.0=h1a1b453_0
+- libtiff=4.0.9=h36446d0_2
+- numpy=1.13.3=py36hb69e940_3
+- opencv=3.4.2=py36h40b0b35_0
+- protobuf=3.6.0=py36he025d50_0
+- py-opencv=3.4.2=py36hc319ecb_0
+- tensorboard=1.8.0=py36he025d50_0
+- tensorflow=1.8.0=0
+- tensorflow-base=1.8.0=py36h1a1b453_0
+- blas=1.0=mkl
+- bleach=1.5.0=py36_0
+- certifi=2016.2.28=py36_0
+- colorama=0.3.9=py36_0
+- decorator=4.1.2=py36_0
+- entrypoints=0.2.3=py36_0
+- html5lib=0.9999999=py36_0
+- icu=57.1=vc14_0
+- ipykernel=4.6.1=py36_0
+- ipython=6.1.0=py36_0
+- ipython_genutils=0.2.0=py36_0
+- ipywidgets=6.0.0=py36_0
+- jedi=0.10.2=py36_2
+- jinja2=2.9.6=py36_0
+- jpeg=9b=vc14_0
+- jsonschema=2.6.0=py36_0
+- jupyter=1.0.0=py36_3
+- jupyter_client=5.1.0=py36_0
+- jupyter_console=5.2.0=py36_0
+- jupyter_core=4.3.0=py36_0
+- markdown=2.6.9=py36_0
+- markupsafe=1.0=py36_0
+- mistune=0.7.4=py36_0
+- mkl=2017.0.3=0
+- nbconvert=5.2.1=py36_0
+- nbformat=4.4.0=py36_0
+- notebook=5.0.0=py36_0
+- openssl=1.0.2l=vc14_0
+- pandocfilters=1.4.2=py36_0
+- path.py=10.3.1=py36_0
+- pickleshare=0.7.4=py36_0
+- pip=9.0.1=py36_1
+- prompt_toolkit=1.0.15=py36_0
+- pygments=2.2.0=py36_0
+- pyqt=5.6.0=py36_2
+- python=3.6.2=0
+- python-dateutil=2.6.1=py36_0
+- pyyaml=3.12=py36_0
+- pyzmq=16.0.2=py36_0
+- qt=5.6.2=vc14_6
+- qtconsole=4.3.1=py36_0
+- scipy=0.19.1=np113py36_0
+- setuptools=36.4.0=py36_1
+- simplegeneric=0.8.1=py36_1
+- sip=4.18=py36_0
+- six=1.10.0=py36_0
+- termcolor=1.1.0=py36_0
+- testpath=0.3.1=py36_0
+- tornado=4.5.2=py36_0
+- traitlets=4.3.2=py36_0
+- vc=14=0
+- vs2015_runtime=14.0.25420=0
+- wcwidth=0.1.7=py36_0
+- werkzeug=0.12.2=py36_0
+- wheel=0.29.0=py36_0
+- widgetsnbextension=3.0.2=py36_0
+- wincertstore=0.2=py36_0
+- zlib=1.2.11=vc14_0
+- pip:
+  - cycler==0.10.0
+  - ipython-genutils==0.2.0
+  - jupyter-client==5.1.0
+  - jupyter-console==5.2.0
+  - jupyter-core==4.3.0
+  - matplotlib==2.0.2
+  - prompt-toolkit==1.0.15
+  - pygame==1.9.3
+  - pyparsing==2.2.0
+  - pytz==2017.2
+prefix: D:\Anaconda3\envs\tf1.8

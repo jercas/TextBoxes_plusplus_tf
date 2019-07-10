@@ -25,7 +25,8 @@ from tf_extended import tf_utils
 
 import os
 import tensorflow.contrib.slim as slim
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 # =========================================================================== #
 # Text Network flags.
@@ -49,10 +50,11 @@ tf.app.flags.DEFINE_boolean(
 # General Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
-	'train_dir', 'icdar15_model/',
+	'train_dir', './model/ckpt',
     'Directory where checkpoints/ckpt and event logs are written to.')
+# TODO:GPU number configuration
 tf.app.flags.DEFINE_integer(
-	'num_clones', 1,
+	'num_clones', 2,
     'Number of model clones to deploy.')
 tf.app.flags.DEFINE_boolean(
 	'clone_on_cpu', False,
