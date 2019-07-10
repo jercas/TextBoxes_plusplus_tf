@@ -3,7 +3,11 @@ import tensorflow as tf
 
 from datasets import xml_to_tfrecords
 import os
-
+"""
+usage:
+python gene_tfrecords.py --xml_img_txt_path=./logs/train_xml.txt --output_dir=tfrecords --output_name=annotated_data
+    samples_per_files=2000
+"""
 tf.app.flags.DEFINE_string(
     'output_name', 'annotated_data',
     'Basename used for TFRecords output files.'

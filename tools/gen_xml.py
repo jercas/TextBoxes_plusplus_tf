@@ -3,6 +3,7 @@ import os
 import cv2
 import time
 import codecs
+import argparse
 import xml.dom.minidom
 
 
@@ -180,19 +181,19 @@ def get_all_txt(directory, split_flag, logs_dir, output_dir, GT_Type=False):
 
 	start_time = time.time()
 	for root,dirs,files in os.walk(directory):
-		for each in files:
-			if each.split('.')[-1] == 'txt':
-				xml_path = os.path.join(root, each[:-4] + '.xml')
-				img_path = os.path.join(root[:-3], each[3:-4] + '.jpg')
+		for file in files:
+			if file.split('.')[-1] == 'txt':
+				xml_path = os.path.join(root, file[:-4] + '.xml')
+				img_path = os.path.join(root[:-3], file[3:-4] + '.jpg')
 
 				if output_dir:
 					if not os.path.exists(output_dir):
 						os.makedirs(output_dir)
-					save_xml_path = os.path.join(output_dir, each[:-4] + '.xml')
+					save_xml_path = os.path.join(output_dir, file[:-4] + '.xml')
 				else:
 					save_xml_path = xml_path
 
-				if process_convert(root, each, output_dir, GT_Type):
+				if process_convert(root, file, output_dir, GT_Type):
 					xml_path_list.append('{},{}\n'.format(img_path, save_xml_path))
 					img_path_list.append('{}\n'.format(img_path))
 				count += 1
@@ -229,17 +230,17 @@ def save_to_text(img_path_list, xml_path_list, count, split_flag, logs_dir):
 
 
 if  __name__ == '__main__':
-	import argparse
 	parser = argparse.ArgumentParser(description='icdar15 generate xml tools')
-	parser.add_argument('--in_dir', '-i', default='./datasets/ICDAR_15/textLocalization/train', type=str)
+	parser.add_argument('--in_dir', '-i', default='./datasets/ICDAR_15/textLocalization/train', type=str,
+	                    help='where to load training set and its gt txt files')
 	parser.add_argument('--split_flag', '-s', default='no', type=str,
 	                    help='whether or not to split the datasets')
 	parser.add_argument('--save_logs', '-l', default='logs', type=str,
 	                    help='whether to save train_xml.txt')
 	parser.add_argument('--output_dir', '-o', default='./datasets/ICDAR_15/textLocalization/train/xml', type=str,
 	                    help='where to save xmls')
-
 	args = parser.parse_args()
+
 	directory = args.in_dir
 	split_flag = args.split_flag
 	logs_dir = args.save_logs
