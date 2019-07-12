@@ -1,10 +1,8 @@
-#encoding=utf-8
+import time
 import numpy as np
 import tensorflow as tf
-import time
 import tensorflow.contrib.slim as slim
 import util
-
 
 
 def int64_feature(value):

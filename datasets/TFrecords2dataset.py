@@ -27,10 +27,12 @@ def get_datasets(data_dir, file_pattern = '*.tfrecord'):
     num_samples = 0
     #num_samples = 288688
     #num_samples = 858750 only for synth datasets
+
     for file_path in file_path_list:
         for record in tf.python_io.tf_record_iterator(file_path):
             num_samples += 1
-    print('num_samples:', num_samples) 
+    print('num_samples:', num_samples)
+
     reader = tf.TFRecordReader
     keys_to_features = {
         'image/encoded': tf.FixedLenFeature((), tf.string, default_value=''),

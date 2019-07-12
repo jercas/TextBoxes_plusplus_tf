@@ -21,10 +21,13 @@ def _process_image(train_img_path, train_xml_path, name):
 	print('image path:{0}  xml path:{1}\n'.format(train_img_path, train_xml_path))
 	image_data = tf.gfile.FastGFile(train_img_path, 'rb').read()
 
-	#TODO: error, not well-formed (invalid token)
 	tree = ET.parse(train_xml_path)
 	root = tree.getroot()
-	# Image shape.
+
+	#<size>
+	#	<width></width>
+	#	<height></height>
+	#	<depth></depth>
 	size = root.find('size')
 	height = int(size.find('height').text)
 	width = int(size.find('width').text)
@@ -32,11 +35,8 @@ def _process_image(train_img_path, train_xml_path, name):
 	if height <= 0 or width <= 0 or depth <= 0:
 		print('height or width depth error',height, width, depth)
 		return
-
-	shape = [int(size.find('height').text),
-			 int(size.find('width').text),
-			 int(size.find('depth').text)]
-	# Find annotations.
+	shape = [height, width, depth]
+	##</size>>
 	bboxes = []
 	labels = []
 	labels_text = []
@@ -44,9 +44,12 @@ def _process_image(train_img_path, train_xml_path, name):
 	truncated = []
 	oriented_bbox = []
 	ignored = 0
+	#<filename>
 	filename = root.find('filename').text
-
+	#</filename>
+	#<object>
 	for obj in root.findall('object'):
+		#<name>
 		label = obj.find('name').text
 		if label == 'none':
 			label = 'none'
@@ -54,17 +57,18 @@ def _process_image(train_img_path, train_xml_path, name):
 			label = 'text'
 		labels.append(int(TXT_LABELS[label][0]))
 		labels_text.append(label.encode('ascii'))
-
+		#</name>
+		#<difficult>
 		if obj.find('difficult') is not None:
-			#print('append difficult')
 			difficult.append(int(obj.find('difficult').text))
 		else:
 			difficult.append(0)
+		#</difficult>
 		if obj.find('truncated'):
 			truncated.append(int(obj.find('truncated').text))
 		else:
 			truncated.append(0)
-
+		#<bndbox>
 		bbox = obj.find('bndbox')
 		ymin = float(bbox.find('ymin').text)
 		ymax = float(bbox.find('ymax').text)
@@ -81,7 +85,6 @@ def _process_image(train_img_path, train_xml_path, name):
 		y3 = float(bbox.find('y3').text)
 		y4 = float(bbox.find('y4').text)
 
-
 		ymin, ymax = np.clip([ymin, ymax], 0 , height)
 		xmin, xmax = np.clip([xmin, xmax] ,0 , width)
 
@@ -91,27 +94,32 @@ def _process_image(train_img_path, train_xml_path, name):
 		bboxes.append(( ymin / shape[0],
 						xmin / shape[1],
 						ymax / shape[0],
-						xmax / shape[1]
-					   ))
+						xmax / shape[1]))
 
-		oriented_bbox.append((x1 / width, x2 / width, x3 / width, x4 /width, y1 /height, y2 / height, y3 / height, y4 / height))
-
+		oriented_bbox.append((x1 / width, x2 / width, x3 / width, x4 / width,
+		                      y1 / height, y2 / height, y3 / height, y4 / height))
+		#</bndbox>
+	#</object>
 	return image_data, shape, bboxes, labels, labels_text, difficult, truncated, oriented_bbox, ignored, filename
+
 
 def _convert_to_example(image_data, labels, labels_text, bboxes, shape,
 						difficult, truncated, oriented_bbox, ignored, filename):
-	"""Build an Example proto for an image example.
-
-	Args:
-	  image_data: string, JPEG encoding of RGB image;
-	  labels: list of integers, identifier for the ground truth;
-	  labels_text: list of strings, human-readable labels;
-	  bboxes: list of bounding boxes; each box is a list of integers;
+	"""
+	Build an Example proto for an image example.
+	:param image_data: string, JPEG encoding of RGB image;
+	:param labels: list of integers, identifier for the ground truth;
+	:param labels_text: list of strings, human-readable labels;
+	:param bboxes: list of bounding boxes; each box is a list of integers;
 		  specifying [ymin, xmin, ymax, xmax]. All boxes are assumed to belong
 		  to the same label as the image label.
-	  shape: 3 integers, image shapes in pixels.
-	Returns:
-	  Example proto
+	:param shape: 3 integers, image shapes in pixels.
+	:param difficult: indicate whether the it is a text or not
+	:param truncated:
+	:param oriented_bbox: bounding box coordinate
+	:param ignored:
+	:param filename: image file name
+	:return:
 	"""
 	xmin = []
 	ymin = []
@@ -171,13 +179,13 @@ def _get_output_filename(output_dir, name, idx):
 
 
 def _add_to_tfrecord(train_img_path, train_xml_path , name, tfrecord_writer):
-	"""Loads data from image and annotations files and add them to a TFRecord.
-
-	Args:
-	  train_img_path: img path;
-	  train_xml_path: xml path
-	  name: Image name to add to the TFRecord;
-	  tfrecord_writer: The TFRecord writer to use for writing.
+	"""
+	Loads data from image and annotations files and add them to a TFRecord.
+	:param train_img_path: img path.
+	:param train_xml_path: xml path.
+	:param name: Image name to add to the TFRecord.
+	:param tfrecord_writer: The TFRecord writer to use for writing.
+	:return: None
 	"""
 	image_data, shape, bboxes, labels, labels_text, difficult, truncated, oriented_bbox, ignored, filename = \
 		_process_image(train_img_path, train_xml_path, name)
@@ -216,17 +224,15 @@ def run(xml_img_txt_path, output_dir, output_name, samples_per_files=200):
 			train_xml_path.append(line.split(',')[1])
 		else:
 			error_list.append(line)
-			print('line split error:',line)
-	with open(os.path.join(output_dir, 'create_tfrecord_error_lines_list.txt'), 'w') as f:
+			print('line split error: {0}. short of image path or xml path.'.format(line))
+	with open(os.path.join(output_dir, 'tfrecordTransformErrorLineList.txt'), 'w') as f:
 		f.writelines(error_list)
-
 
 	# Process dataset files
 	i = 0
 	fidx = 0
 	while i < len(train_img_path):
 		# Open new TFRecord file.
-		#TODO: path error?
 		# '%s/%s_%03d.tfrecord' % (output_dir, name, idx)
 		tf_filename = _get_output_filename(output_dir, output_name, fidx)
 
@@ -243,4 +249,3 @@ def run(xml_img_txt_path, output_dir, output_name, samples_per_files=200):
 				j += 1
 			fidx += 1
 	print('\nFinished converting the charts dataset!')
-

@@ -9,11 +9,11 @@ import xml.dom.minidom
 
 def process_convert(rootName, txtName, output_dir, GT_Type=False):
 	"""
-
-	:param rootName:
-	:param txtName:
-	:param output_dir:
-	:param GT_Type:
+	Process the given txt and convert it to xml.
+	:param rootName: The root path of the txt files.
+	:param txtName: The list of all the txt name.
+	:param output_dir: The path to output the xml files.
+	:param GT_Type: Choose the gt type rotated rectangle / quadrilateral.
 	:return:
 	"""
 	# Read the txt annotation file.
@@ -180,6 +180,15 @@ def process_convert(rootName, txtName, output_dir, GT_Type=False):
 
 
 def get_all_txt(directory, split_flag, logs_dir, output_dir, GT_Type=False):
+	"""
+	Get all the txt files path in the given directory and then convert to xml.
+	:param directory: where to load training set and its gt txt files.
+	:param split_flag: whether or not to split the datasets.
+	:param logs_dir:  where to save train_xml.txt which contain images and gt.xml.
+	:param output_dir: where to save xmls.
+	:param GT_Type: Choose the gt type rotated rectangle / quadrilateral.
+	:return: None
+	"""
 	count = 0
 	xml_path_list = []
 	img_path_list = []
@@ -239,13 +248,17 @@ def save_to_text(img_path_list, xml_path_list, count, split_flag, logs_dir):
 if  __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='icdar15 generate xml tools')
 	parser.add_argument('--in_dir', '-i', default='./datasets/ICDAR_15/textLocalization/train', type=str,
-	                    help='where to load training set and its gt txt files')
+	                    help='where to load training set and its gt txt files'
+	                    )
 	parser.add_argument('--split_flag', '-s', default='no', type=str,
-	                    help='whether or not to split the datasets')
+	                    help='whether or not to split the datasets'
+	                    )
 	parser.add_argument('--save_logs', '-l', default='logs', type=str,
-	                    help='whether to save train_xml.txt')
+	                    help='where to save train_xml.txt'
+	                    )
 	parser.add_argument('--output_dir', '-o', default='./datasets/ICDAR_15/textLocalization/train/xml', type=str,
-	                    help='where to save xmls')
+	                    help='where to save xmls'
+	                    )
 	args = parser.parse_args()
 
 	directory = args.in_dir
