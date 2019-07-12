@@ -1,5 +1,4 @@
 import os
-import path
 import glob
 from PIL import Image, ImageDraw
 

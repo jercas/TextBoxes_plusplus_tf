@@ -13,207 +13,253 @@
 # limitations under the License.
 # ==============================================================================
 """Generic training script that trains a SSD model using a given dataset."""
-
+import os
 import tensorflow as tf
+import tensorflow.contrib.slim as slim
 from tensorflow.python.ops import control_flow_ops
 
-from datasets import TFrecords2dataset
+from tf_extended import tf_utils
 from deployment import model_deploy
+from datasets import TFrecords2dataset
 from nets import txtbox_384, txtbox_768
 from processing import ssd_vgg_preprocessing
-from tf_extended import tf_utils
 
-import os
-import tensorflow.contrib.slim as slim
-
-# make all the gpus visible
+# assign the specific training gpu
 os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 
 # =========================================================================== #
 # Textboxes++ Network flags.
 # =========================================================================== #
+# α in Lloc - smooth L1 loss --> Default set to 0.2 for quickly convergence.
 tf.app.flags.DEFINE_float(
 	'loss_alpha', 0.2,
-    'Alpha parameter in the loss function.')
-# OHEM/OHNM ratio, two stage train: 1.nr=3; 2.nr=6.
+    'Alpha parameter in the loss function'
+)
+# On-line hard negative mining (OHNM) ratio, split to two value for two training stages: 1.nr=3; 2.nr=6.
 tf.app.flags.DEFINE_float(
 	'negative_ratio', 3.,
-    'Negative ratio in the loss function.')
-# IOU threshold
+    'On-line negative mining ratio in the loss function.'
+)
+# IOU threshold for NMS
 tf.app.flags.DEFINE_float(
 	'match_threshold', 0.5,
-    'Matching threshold in the loss function.')
+    'Matching threshold in the loss function.'
+)
 # Multi-scales training divide into two stages: 1.size=384, lr=10^-4; 2.size=786, lr=10^-5.
 tf.app.flags.DEFINE_boolean(
 	'large_training', False,
-	'Use 768 to train')
+	'Use 768 to train'
+)
 # =========================================================================== #
-# train & deploy Flags.
+# Train & Deploy Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
-        'train_dir', './model',
-    'Directory where checkpoints and event logs are written to.')
+    'train_dir', './model',
+    'Directory where checkpoints and event logs are written to.'
+)
 # TODO:GPU number configuration
 tf.app.flags.DEFINE_integer(
 	'num_clones', 1,
-    'Number of model clones to deploy.')
+    'Number of model clones to deploy.'
+)
 tf.app.flags.DEFINE_boolean(
 	'clone_on_cpu', False,
-    'Use CPUs to deploy clones.')
+    'Use CPUs to deploy clones.'
+)
 tf.app.flags.DEFINE_integer(
 	'num_readers', 8,
-    'The number of parallel readers that read data from the dataset.')
+    'The number of parallel readers that read data from the dataset.'
+)
 tf.app.flags.DEFINE_integer(
 	'num_preprocessing_threads', 8,
-    'The number of threads used to create the batches.')
+    'The number of threads used to create the batches.'
+)
 tf.app.flags.DEFINE_integer(
 	'log_every_n_steps', 10,
-    'The frequency with which logs are print.')
+    'The frequency with which logs are print.'
+)
 tf.app.flags.DEFINE_integer(
 	'save_summaries_secs', 120,
-    'The frequency with which summaries are saved, in seconds.')
+    'The frequency with which summaries are saved, in seconds.'
+)
 tf.app.flags.DEFINE_integer(
 	'save_interval_secs', 1200,
-    'The frequency with which the model is saved, in seconds.')
+    'The frequency with which the model is saved, in seconds.'
+)
 tf.app.flags.DEFINE_float(
-	'gpu_memory_fraction', 0.6,
-	'GPU memory fraction to use.')
+	'gpu_memory_fraction', 0.8,
+	'GPU memory fraction to use.'
+)
 tf.app.flags.DEFINE_boolean(
     'allow_growth', True,
     'allow the GPU memory growth according to demand'
 )
-
 # =========================================================================== #
 # Optimization Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_float(
 	'weight_decay', 0.0005,
-    'The weight decay on the model weights.')
+    'The weight decay on the model weights.'
+)
 tf.app.flags.DEFINE_string(
 	'optimizer', 'adam',
-    'The name of the optimizer, one of "adadelta", "adagrad", "adam","ftrl", "momentum", "sgd" or "rmsprop".')
+    'The name of the optimizer, one of "adadelta", "adagrad", "adam","ftrl", "momentum", "sgd" or "rmsprop".'
+)
 tf.app.flags.DEFINE_float(
 	'adadelta_rho', 0.95,
-    'The decay rate for adadelta.')
+    'The decay rate for adadelta.'
+)
 tf.app.flags.DEFINE_float(
 	'adagrad_initial_accumulator_value', 0.1,
-    'Starting value for the AdaGrad accumulators.')
+    'Starting value for the AdaGrad accumulators.'
+)
 tf.app.flags.DEFINE_float(
 	'adam_beta1', 0.9,
-    'The exponential decay rate for the 1st moment estimates.')
+    'The exponential decay rate for the 1st moment estimates.'
+)
 tf.app.flags.DEFINE_float(
 	'adam_beta2', 0.999,
-    'The exponential decay rate for the 2nd moment estimates.')
+    'The exponential decay rate for the 2nd moment estimates.'
+)
 tf.app.flags.DEFINE_float(
 	'opt_epsilon', 1.0,
-    'Epsilon term for the optimizer.')
+    'Epsilon term for the optimizer.'
+)
 tf.app.flags.DEFINE_float(
 	'ftrl_learning_rate_power', -0.5,
-    'The learning rate power.')
+    'The learning rate power.'
+)
 tf.app.flags.DEFINE_float(
 	'ftrl_initial_accumulator_value', 0.1,
-    'Starting value for the FTRL accumulators.')
+    'Starting value for the FTRL accumulators.'
+)
 tf.app.flags.DEFINE_float(
 	'ftrl_l1', 0.0,
-    'The FTRL l1 regularization strength.')
+    'The FTRL l1 regularization strength.'
+)
 tf.app.flags.DEFINE_float(
 	'ftrl_l2', 0.0,
-    'The FTRL l2 regularization strength.')
+    'The FTRL l2 regularization strength.'
+)
 tf.app.flags.DEFINE_float(
 	'momentum', 0.9,
-    'The momentum for the MomentumOptimizer and RMSPropOptimizer.')
+    'The momentum for the MomentumOptimizer and RMSPropOptimizer.'
+)
 tf.app.flags.DEFINE_float(
 	'rmsprop_momentum', 0.9,
-	'Momentum.')
+	'Momentum.'
+)
 tf.app.flags.DEFINE_float(
 	'rmsprop_decay', 0.9,
-	'Decay term for RMSProp.')
-
+	'Decay term for RMSProp.'
+)
 # =========================================================================== #
 # Learning Rate Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
 	'learning_rate_decay_type', 'exponential',
-    'Specifies how the learning rate is decayed. One of "fixed", "exponential",'' or "polynomial"')
+    'Specifies how the learning rate is decayed. One of "fixed", "exponential",'' or "polynomial"'
+)
 tf.app.flags.DEFINE_float(
 	'learning_rate', 0.0001,
-    'Initial learning rate.')
+    'Initial learning rate.'
+)
 tf.app.flags.DEFINE_float(
 	'end_learning_rate', 0.0001,
-    'The minimal end learning rate used by a polynomial decay learning rate.')
+    'The minimal end learning rate used by a polynomial decay learning rate.'
+)
 tf.app.flags.DEFINE_float(
 	'label_smoothing', 0.0,
-    'The amount of label smoothing.')
+    'The amount of label smoothing.'
+)
 tf.app.flags.DEFINE_float(
 	'learning_rate_decay_factor', 0.1,
-    'Learning rate decay factor.')
+    'Learning rate decay factor.'
+)
 tf.app.flags.DEFINE_float(
 	'num_epochs_per_decay', 40000,
-    'Number of epochs after which learning rate decays.')
+    'Number of epochs after which learning rate decays.'
+)
 tf.app.flags.DEFINE_float(
     'moving_average_decay', None,
-	'The decay to use for the moving average. If left as None, then moving averages are not used.')
-
+	'The decay to use for the moving average. If left as None, then moving averages are not used.'
+)
 # =========================================================================== #
 # Dataset Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
 	'dataset_name', 'icdar2015',
-    'The name of the dataset to load.')
+    'The name of the dataset to load.'
+)
 tf.app.flags.DEFINE_integer(
 	'num_classes', 2,
-    'Number of classes to use in the dataset.')
+    'Number of classes to use in the dataset.'
+)
 tf.app.flags.DEFINE_string(
 	'dataset_split_name', 'train',
-    'The name of the train/test split.')
+    'The name of the train/test split.'
+)
 tf.app.flags.DEFINE_string(
     'dataset_dir', './tfrecords',
-    ' The directory where the dataset files are stored.')
+    'The directory where the dataset files are stored.'
+)
 tf.app.flags.DEFINE_integer(
     'labels_offset', 0,
     'An offset for the labels in the dataset. This flag is primarily used to '
     'evaluate the VGG and ResNet architectures which do not use a background '
-    'class for the ImageNet dataset.')
+    'class for the ImageNet dataset.'
+)
 tf.app.flags.DEFINE_string(
 	'model_name', 'text_box_384',
-    'The name of the architecture to train.')
+    'The name of the architecture to train.'
+)
 tf.app.flags.DEFINE_string(
     'preprocessing_name', None,
     'The name of the preprocessing to use. If left '
-    'as `None`, then the model_name flag is used.')
+    'as `None`, then the model_name flag is used.'
+)
 tf.app.flags.DEFINE_integer(
 	'batch_size', 32,
-    'The number of samples in each batch.')
+    'The number of samples in each batch.'
+)
 tf.app.flags.DEFINE_integer(
 	'train_image_size', None,
-	'Train image size')
+	'Train image size'
+)
 tf.app.flags.DEFINE_string(
 	'training_image_crop_area', '0.1, 1.0',
-    'the area of image process for training')
+    'the area of image process for training'
+)
 tf.app.flags.DEFINE_integer(
 	'max_number_of_steps', 120000,
-    'The maxim number of training steps.')
+    'The maxim number of training steps.'
+)
 # =========================================================================== #
 # Fine-Tuning Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
     #'checkpoint_path','/home/zsz/code/TextBoxes_plusplus_Tensorflow/model/vgg_fc_16_model/vgg_16.ckpt',
     'checkpoint_path', './model/ckpt/model_pre_train_syn.ckpt',
-    'The path to a checkpoint from which to fine-tune.')
+    'The path to a checkpoint from which to fine-tune.'
+)
 tf.app.flags.DEFINE_string(
     'checkpoint_model_scope', None,
-    'Model scope in the checkpoint. None if the same as the trained model.')
+    'Model scope in the checkpoint. None if the same as the trained model.'
+)
 tf.app.flags.DEFINE_string(
     'checkpoint_exclude_scopes', None,
     'Comma-separated list of scopes of variables to exclude when restoring '
-    'from a checkpoint.')
+    'from a checkpoint.'
+)
 tf.app.flags.DEFINE_string(
     'trainable_scopes', None,
     'Comma-separated list of scopes to filter the set of variables to train.'
-    'By default, None would train all the variables.')
+    'By default, None would train all the variables.'
+)
 tf.app.flags.DEFINE_boolean(
     'ignore_missing_vars', False,
-    'When restoring a checkpoint would ignore missing variables.')
+    'When restoring a checkpoint would ignore missing variables.'
+)
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -223,7 +269,8 @@ FLAGS = tf.app.flags.FLAGS
 def main(_):
     if not FLAGS.dataset_dir:
         raise ValueError(
-            'You must supply the dataset directory with --dataset_dir')
+            'You must supply the dataset directory with --dataset_dir'
+        )
 
     tf.logging.set_verbosity(tf.logging.DEBUG)
     with tf.Graph().as_default():
@@ -234,7 +281,8 @@ def main(_):
             clone_on_cpu=FLAGS.clone_on_cpu,
             replica_id=0,
             num_replicas=1,
-            num_ps_tasks=0)
+            num_ps_tasks=0
+        )
         # Create global_step.
         with tf.device(deploy_config.variables_device()):
             global_step = slim.create_global_step()
@@ -266,7 +314,8 @@ def main(_):
                     num_readers=FLAGS.num_readers,
                     common_queue_capacity=1000 * FLAGS.batch_size,
                     common_queue_min=300 * FLAGS.batch_size,
-                    shuffle=True)
+                    shuffle=True
+                )
             # Get for SSD network: image, labels, bboxes.
             [image, shape, glabels, gbboxes, x1, x2, x3, x4, y1, y2, y3,
              y4] = provider.get([

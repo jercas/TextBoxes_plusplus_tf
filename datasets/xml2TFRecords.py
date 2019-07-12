@@ -186,18 +186,23 @@ def _add_to_tfrecord(train_img_path, train_xml_path , name, tfrecord_writer):
 	tfrecord_writer.write(example.SerializeToString())
 
 
-def run(xml_img_txt_path, output_dir, output_name='icdar15_annotated_data', samples_per_files=200):
-	"""Runs the conversion operation.
-	Args:
-	  xml_img_txt_path: The txt stored where the dataset is stored.
-	  output_dir: Output directory.
+def run(xml_img_txt_path, output_dir, output_name, samples_per_files=200):
 	"""
-
+	Runs the conversion operation from xml to tfrecord.
+	:param xml_img_txt_path: The txt stored where the dataset is stored.
+	:param output_dir: Output directory.
+	:param output_name: Output tfrecord file name.
+	:param samples_per_files: Each tf_record contains how many pictures.
+	:return: None
+	"""
 	if not tf.gfile.Exists(output_dir):
 		tf.gfile.MakeDirs(output_dir)
 
-	train_txt = open(xml_img_txt_path, 'r')
-	lines = train_txt.readlines()
+	with open(xml_img_txt_path, 'r') as f:
+		lines = f.readlines()
+
+	#train_txt = open(xml_img_txt_path, 'r')
+	#lines = train_txt.readlines()
 	train_img_path = []
 	train_xml_path = []
 	error_list = []

@@ -1,10 +1,11 @@
-## an initial version
-## Transform the tfrecord to slim data provider format
-
-import tensorflow as tf
 import os
-import tensorflow.contrib.slim as slim
 import glob
+import tensorflow as tf
+import tensorflow.contrib.slim as slim
+
+"""
+Transform the tfrecord to tf.slim data provider format
+"""
 
 ITEMS_TO_DESCRIPTIONS = {
     'image': 'A color image of varying height and width.',
@@ -12,11 +13,13 @@ ITEMS_TO_DESCRIPTIONS = {
     'object/bbox': 'A list of bounding boxes, one per each object.',
     'object/label': 'A list of labels, one per each object.',
 }
+
 SPLITS_TO_SIZES = {
     #'train': 2518 # for ppt datasets
     #'train': 858750 # for synth text datasets
     'train': 1000 # for icdat 2015 datasets
 }
+
 def get_datasets(data_dir, file_pattern = '*.tfrecord'):
     file_patterns = os.path.join(data_dir, file_pattern)
     print('file_path: {}'.format(file_patterns))

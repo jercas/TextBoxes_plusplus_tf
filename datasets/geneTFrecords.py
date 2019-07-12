@@ -1,16 +1,14 @@
-# -*- coding: utf-8 -*-
-import tensorflow as tf
-
-from datasets import xml2TFRecords
 import os
+import tensorflow as tf
+from datasets import xml2TFRecords
 """
 usage:
-python geneTFrecords.py --xml_img_txt_path=./logs/train_xml.txt --output_dir=tfrecords --output_name=annotated_data
-    samples_per_files=2000
+python geneTFrecords.py --xml_img_txt_path=./logs/train_xml.txt --output_dir=tfrecords 
+                        --output_name=annotated_data --samples_per_files=2000
 """
 
 tf.app.flags.DEFINE_string(
-    'output_name', 'annotated_data',
+    'output_name', 'icdar15_annotated_data',
     'Basename used for TFRecords output files.'
 )
 tf.app.flags.DEFINE_string(
@@ -18,18 +16,18 @@ tf.app.flags.DEFINE_string(
     'Output directory where to store TFRecords files.'
 )
 tf.app.flags.DEFINE_string(
-    'xml_img_txt_path', None,
-    'the path means the txt'
+    'xml_img_txt_path', './logs/train_xml.txt',
+    'the path forward to the txt which contain the info about the path of images and the gt xml file associated'
 )
 tf.app.flags.DEFINE_integer(
     'samples_per_files', 2000,
-    'the number means one tf_record save how many pictures'
+    'setting one tf_record contains how many pictures'
 )
 FLAGS = tf.app.flags.FLAGS
 
 def main(_):
     if not FLAGS.xml_img_txt_path or not os.path.exists(FLAGS.xml_img_txt_path):
-        raise ValueError('You must supply the dataset directory with --xml_img_txt_path')
+        raise ValueError('You must supply a dataset directory with parameter  --xml_img_txt_path')
     print('Dataset directory:', FLAGS.xml_img_txt_path)
     print('Output directory:', FLAGS.output_dir)
 
