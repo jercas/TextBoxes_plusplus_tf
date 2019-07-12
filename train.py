@@ -27,7 +27,7 @@ import os
 import tensorflow.contrib.slim as slim
 
 # make all the gpus visible
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 
 # =========================================================================== #
 # Textboxes++ Network flags.
@@ -198,7 +198,7 @@ tf.app.flags.DEFINE_integer(
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
     #'checkpoint_path','/home/zsz/code/TextBoxes_plusplus_Tensorflow/model/vgg_fc_16_model/vgg_16.ckpt',
-    'checkpoint_path', './models/checkpoint',
+    'checkpoint_path', './model/ckpt/model_pre_train_syn.ckpt',
     'The path to a checkpoint from which to fine-tune.')
 tf.app.flags.DEFINE_string(
     'checkpoint_model_scope', None,
