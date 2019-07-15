@@ -672,6 +672,7 @@ class DeploymentConfig(object):
         if self._num_ps_tasks > 0:
             device += self._ps_device
         device += '/device:CPU:0'
+        return device
 
 
         class _PSDeviceChooser(object):

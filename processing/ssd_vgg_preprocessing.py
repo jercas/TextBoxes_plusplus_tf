@@ -256,10 +256,8 @@ def preprocess_for_train(image, labels, bboxes, xs, ys,
         image: A `Tensor` representing an image of arbitrary size.
         output_height: The height of the image after preprocessing.
         output_width: The width of the image after preprocessing.
-        resize_side_min: The lower bound for the smallest side of the image for
-            aspect-preserving resizing.
-        resize_side_max: The upper bound for the smallest side of the image for
-            aspect-preserving resizing.
+        resize_side_min: The lower bound for the smallest side of the image for aspect-preserving resizing.
+        resize_side_max: The upper bound for the smallest side of the image for aspect-preserving resizing.
 
     Returns:
         A preprocessed image.
@@ -271,10 +269,11 @@ def preprocess_for_train(image, labels, bboxes, xs, ys,
 
         orig_dtype = image.dtype
         print('orig_dtype:', orig_dtype)
+
         # Convert to float scaled [0, 1].
         if image.dtype != tf.float32:
             image = tf.image.convert_image_dtype(image, dtype=tf.float32)
-        # tf_summary_image(image, bboxes, 'image_with_bboxes')
+        tf_summary_image(image, bboxes, 'image_with_bboxes')
 
         # Distort image and bounding boxes.
         dst_image = image

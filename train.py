@@ -35,9 +35,9 @@ tf.app.flags.DEFINE_float(
 	'loss_alpha', 0.2,
     'Alpha parameter in the loss function'
 )
-# On-line hard negative mining (OHNM) ratio, split to two value for two training stages: 1.nr=3; 2.nr=6.
+#TODO: On-line hard negative mining (OHNM) ratio, split to two value for two training stages: 1.nr=3; 2.nr=6.
 tf.app.flags.DEFINE_float(
-	'negative_ratio', 3.,
+	'negative_ratio', 6., #3.
     'On-line negative mining ratio in the loss function.'
 )
 # IOU threshold for NMS
@@ -47,7 +47,7 @@ tf.app.flags.DEFINE_float(
 )
 #TODO: Multi-scales training divide into two stages: 1.size=384, lr=10^-4; 2.size=786, lr=10^-5.
 tf.app.flags.DEFINE_boolean(
-	'large_training', False,
+	'large_training', True, #False
 	'Use 768 to train'
 )
 # =========================================================================== #
@@ -162,11 +162,11 @@ tf.app.flags.DEFINE_string(
 )
 # TODO: stage1 -> lr 10^-4; stage2 -> lr 10^-5
 tf.app.flags.DEFINE_float(
-	'learning_rate', 0.0001,
+	'learning_rate', 0.00001, #0.0001
     'Initial learning rate.'
 )
 tf.app.flags.DEFINE_float(
-	'end_learning_rate', 0.0001,
+	'end_learning_rate', 0.00001, #0.0001
     'The minimal end learning rate used by a polynomial decay learning rate.'
 )
 tf.app.flags.DEFINE_float(
@@ -211,7 +211,7 @@ tf.app.flags.DEFINE_integer(
     'class for the ImageNet dataset.'
 )
 tf.app.flags.DEFINE_string(
-	'model_name', 'text_box_384',
+	'model_name', 'text_box_768',
     'The name of the architecture to train.'
 )
 tf.app.flags.DEFINE_string(
@@ -233,14 +233,15 @@ tf.app.flags.DEFINE_string(
 )
 #TODO: stage1 -> 8k; stage2 -> 4k
 tf.app.flags.DEFINE_integer(
-	'max_number_of_steps', 8000,
+	'max_number_of_steps', 4000, #8000
     'The maxim number of training steps.'
 )
 # =========================================================================== #
 # Fine-Tuning Flags.
 # =========================================================================== #
+#TODO: indicate ckpt path for continuing stage 2 training.
 tf.app.flags.DEFINE_string(
-    'checkpoint_path', './model/ckpt/model_pre_train_syn.ckpt',
+    'checkpoint_path', './model/model.ckpt-8000.ckpt', #'./model/ckpt/model_pre_train_syn.ckpt'
     'The path to a checkpoint from which to fine-tune.'
 )
 tf.app.flags.DEFINE_string(
@@ -272,8 +273,9 @@ def main(_):
         raise ValueError(
             'You must supply the dataset directory with --dataset_dir'
         )
-    # set the
+    # Sets the threshold for what messages will be logged. (DEBUG / INFO / WARN / ERROR / FATAL)
     tf.logging.set_verbosity(tf.logging.DEBUG)
+
     with tf.Graph().as_default():
         # Config model_deploy. Keep TF Slim Models structure.
         # Useful if want to need multiple GPUs and/or servers in the future.
@@ -282,9 +284,9 @@ def main(_):
             clone_on_cpu=FLAGS.clone_on_cpu,
             replica_id=0,
             num_replicas=1,
-            num_ps_tasks=0
-        )
-        # Create global_step.
+            num_ps_tasks=0)
+
+        # Create global_step, the training iteration counter.
         with tf.device(deploy_config.variables_device()):
             global_step = slim.create_global_step()
 
@@ -303,12 +305,12 @@ def main(_):
 
         text_shape = text_net.params.img_shape
         print('text_shape: ' + str(text_shape))
+
         # Compute the default anchor boxes with the given image shape.
         text_anchors = text_net.anchors(text_shape)
 
         # Print the training configuration before training.
-        tf_utils.print_configuration(FLAGS.__flags, text_net.params,
-                                     dataset.data_sources, FLAGS.train_dir)
+        tf_utils.print_configuration(FLAGS.__flags, text_net.params, dataset.data_sources, FLAGS.train_dir)
 
         # =================================================================== #
         # Create a dataset provider and batches.
@@ -333,9 +335,7 @@ def main(_):
              ])
             gxs = tf.transpose(tf.stack([x1, x2, x3, x4]))  #shape = (N,4)
             gys = tf.transpose(tf.stack([y1, y2, y3, y4]))
-
             image = tf.identity(image, 'input_image')
-
             init_op = tf.global_variables_initializer()
             # tf.global_variables_initializer()
 
@@ -499,6 +499,7 @@ def main(_):
             log_device_placement=False,
             allow_soft_placement=True,
             gpu_options=gpu_options)
+
         saver = tf.train.Saver(
             max_to_keep=100,
             keep_checkpoint_every_n_hours=1.0,
