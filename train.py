@@ -25,7 +25,7 @@ from nets import txtbox_384, txtbox_768
 from processing import ssd_vgg_preprocessing
 
 # assign the specific training gpu
-os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+os.environ['CUDA_VISIBLE_DEVICES'] = '6,7'
 
 # =========================================================================== #
 # Textboxes++ Network flags.
@@ -45,7 +45,7 @@ tf.app.flags.DEFINE_float(
 	'match_threshold', 0.5,
     'Matching threshold in the loss function.'
 )
-# Multi-scales training divide into two stages: 1.size=384, lr=10^-4; 2.size=786, lr=10^-5.
+#TODO: Multi-scales training divide into two stages: 1.size=384, lr=10^-4; 2.size=786, lr=10^-5.
 tf.app.flags.DEFINE_boolean(
 	'large_training', False,
 	'Use 768 to train'
@@ -59,7 +59,7 @@ tf.app.flags.DEFINE_string(
 )
 # TODO:GPU number configuration
 tf.app.flags.DEFINE_integer(
-	'num_clones', 1,
+	'num_clones', 2,
     'Number of model clones to deploy.'
 )
 tf.app.flags.DEFINE_boolean(
@@ -160,6 +160,7 @@ tf.app.flags.DEFINE_string(
 	'learning_rate_decay_type', 'exponential',
     'Specifies how the learning rate is decayed. One of "fixed", "exponential",'' or "polynomial"'
 )
+# TODO: stage1 -> lr 10^-4; stage2 -> lr 10^-5
 tf.app.flags.DEFINE_float(
 	'learning_rate', 0.0001,
     'Initial learning rate.'
@@ -219,7 +220,7 @@ tf.app.flags.DEFINE_string(
     'as `None`, then the model_name flag is used.'
 )
 tf.app.flags.DEFINE_integer(
-	'batch_size', 32,
+	'batch_size', 16,
     'The number of samples in each batch.'
 )
 tf.app.flags.DEFINE_integer(
@@ -230,15 +231,15 @@ tf.app.flags.DEFINE_string(
 	'training_image_crop_area', '0.1, 1.0',
     'the area of image process for training'
 )
+#TODO: stage1 -> 8k; stage2 -> 4k
 tf.app.flags.DEFINE_integer(
-	'max_number_of_steps', 120000,
+	'max_number_of_steps', 8000,
     'The maxim number of training steps.'
 )
 # =========================================================================== #
 # Fine-Tuning Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
-    #'checkpoint_path','/home/zsz/code/TextBoxes_plusplus_Tensorflow/model/vgg_fc_16_model/vgg_16.ckpt',
     'checkpoint_path', './model/ckpt/model_pre_train_syn.ckpt',
     'The path to a checkpoint from which to fine-tune.'
 )
@@ -271,7 +272,7 @@ def main(_):
         raise ValueError(
             'You must supply the dataset directory with --dataset_dir'
         )
-
+    # set the
     tf.logging.set_verbosity(tf.logging.DEBUG)
     with tf.Graph().as_default():
         # Config model_deploy. Keep TF Slim Models structure.
@@ -292,21 +293,26 @@ def main(_):
 
         # Get the TextBoxes++ network and its anchors.
         text_net = txtbox_384.TextboxNet()
+
         # Stage 2 training using the 768x768 input size.
         if FLAGS.large_training:
+            # replace the input image shape and the extracted feature map size from each indicated layer which
+            # associated to each textbox layer.
             text_net.params = text_net.params._replace(img_shape = (768, 768))
             text_net.params = text_net.params._replace(feat_shapes = [(96, 96), (48,48), (24, 24), (12, 12), (10, 10), (8, 8)])
+
         text_shape = text_net.params.img_shape
         print('text_shape: ' + str(text_shape))
+        # Compute the default anchor boxes with the given image shape.
         text_anchors = text_net.anchors(text_shape)
-        # Print the training configuration.
+
+        # Print the training configuration before training.
         tf_utils.print_configuration(FLAGS.__flags, text_net.params,
                                      dataset.data_sources, FLAGS.train_dir)
 
         # =================================================================== #
         # Create a dataset provider and batches.
         # =================================================================== #
-
         with tf.device(deploy_config.inputs_device()):
             with tf.name_scope(FLAGS.dataset_name + '_data_provider'):
                 provider = slim.dataset_data_provider.DatasetDataProvider(
@@ -332,17 +338,17 @@ def main(_):
 
             init_op = tf.global_variables_initializer()
             # tf.global_variables_initializer()
+
             # Pre-processing image, labels and bboxes.
             training_image_crop_area = FLAGS.training_image_crop_area
             area_split = training_image_crop_area.split(',')
             assert len(area_split) == 2
             training_image_crop_area = [
                 float(area_split[0]),
-                float(area_split[1])
-            ]
+                float(area_split[1])]
 
             image, glabels, gbboxes, gxs, gys= \
-                ssd_vgg_preprocessing.preprocess_for_train(image,  glabels,gbboxes,gxs, gys,
+                ssd_vgg_preprocessing.preprocess_for_train(image, glabels, gbboxes, gxs, gys,
                                                         text_shape,
                                                         data_format='NHWC', crop_area_range=training_image_crop_area)
 

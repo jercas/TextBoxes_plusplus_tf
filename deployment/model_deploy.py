@@ -534,37 +534,46 @@ class DeploymentConfig(object):
         self._ps_device = '/job:' + ps_job_name if num_ps_tasks > 0 else ''
         self._worker_device = '/job:' + worker_job_name if num_ps_tasks > 0 else ''
 
+
     @property
     def num_clones(self):
         return self._num_clones
+
 
     @property
     def clone_on_cpu(self):
         return self._clone_on_cpu
 
+
     @property
     def fake_multiple_gpus(self):
         return self._fake_multiple_gpus
+
 
     @property
     def replica_id(self):
         return self._replica_id
 
+
     @property
     def num_replicas(self):
         return self._num_replicas
+
 
     @property
     def num_ps_tasks(self):
         return self._num_ps_tasks
 
+
     @property
     def ps_device(self):
         return self._ps_device
 
+
     @property
     def worker_device(self):
         return self._worker_device
+
 
     def caching_device(self):
         """Returns the device to use for caching variables.
@@ -578,6 +587,7 @@ class DeploymentConfig(object):
             return lambda op: op.device
         else:
             return None
+
 
     def clone_device(self, clone_index):
         """Device used to create the clone and all the ops inside the clone.
@@ -606,6 +616,7 @@ class DeploymentConfig(object):
                 device += '/device:GPU:%d' % clone_index
         return device
 
+
     def clone_scope(self, clone_index):
         """Name scope to create the clone.
 
@@ -625,6 +636,7 @@ class DeploymentConfig(object):
             scope = 'clone_%d' % clone_index
         return scope
 
+
     def optimizer_device(self):
         """Device to use with the optimizer.
 
@@ -635,6 +647,7 @@ class DeploymentConfig(object):
             return self._worker_device + '/device:CPU:0'
         else:
             return ''
+
 
     def inputs_device(self):
         """Device to use to build the inputs.
@@ -648,6 +661,7 @@ class DeploymentConfig(object):
         device += '/device:CPU:0'
         return device
 
+
     def variables_device(self):
         """Returns the device to use for variables created inside the clone.
 
@@ -658,6 +672,7 @@ class DeploymentConfig(object):
         if self._num_ps_tasks > 0:
             device += self._ps_device
         device += '/device:CPU:0'
+
 
         class _PSDeviceChooser(object):
             """Slim device chooser for variables when using PS."""

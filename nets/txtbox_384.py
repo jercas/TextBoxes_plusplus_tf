@@ -1,19 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 This framework is based on SSD_tensorlow(https://github.com/balancap/SSD-Tensorflow)
-Add descriptions
 """
-
 import math
-from collections import namedtuple
-import copy
 import numpy as np
 import tensorflow as tf
-
 import tf_extended as tfe
 from nets import custom_layers
 from nets import textbox_common
-
+from collections import namedtuple
 import tensorflow.contrib.slim as slim
 
 # =========================================================================== #
@@ -41,7 +35,7 @@ class TextboxNet(object):
 		#TODO：feat_shapes is feature map size?
 		feat_shapes=[(48, 48), (24, 24), (12, 12), (6, 6), (4, 4), (2, 2)],
 		# Anchors 48 = 8 ratios * 6 sizes, each textbox layer 8 = 8 ratios * 1 size
-		# !!! Different anchor ratios setting from the original paper (1,2,3,5,1/2,1/3,1/5)->(2,1/2,3,1/3,4,1/4,5,1/5).
+		#TODO: Different anchor ratios setting from the original paper (1,2,3,5,1/2,1/3,1/5)->(2,1/2,3,1/3,4,1/4,5,1/5).
 		anchor_ratios=[
 			[2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
 			[2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
@@ -62,6 +56,7 @@ class TextboxNet(object):
 		normalizations=[20, -1, -1, -1, -1, -1],
 		prior_scaling=[0.1, 0.1, 0.2, 0.2])  #step  8 16 32 64 96 192
 
+
 	def __init__(self, params=None):
 		"""
 		Init the Textbox net with some parameters. Use the default ones
@@ -71,6 +66,7 @@ class TextboxNet(object):
 			self.params = params
 		else:
 			self.params = self.default_params
+
 
 	# ======================================================================= #
 	def net(self,
@@ -96,7 +92,7 @@ class TextboxNet(object):
 			scope=scope,
 			update_feat_shapes=update_feat_shapes)
 		# Update feature shapes (try at least!)
-		# TODO: what's this part means? why change the feature map size?
+		# TODO: change the feature map size for larger input image size 384 -> 768
 		if update_feat_shapes:
 			shapes = textboxes_feat_shapes_from_net(r[-1],
 													self.params.feat_shapes)
@@ -205,9 +201,8 @@ def text_multibox_layer(layer,
 						normalization=-1):
 	"""
 	Construct a multibox layer, return a class and localization predictions.
-	The  most different between textbox and ssd is the prediction shape
-	where textbox has prediction score shape (48,48,2,6)
-	and location has shape (48,48,2,6,12)
+	The most different between textbox and ssd is the prediction shape
+	where textbox has prediction score shape (48,48,2,6) and location has shape (48,48,2,6,12)
 	besise,the kernel for every layer same
 	"""
 	net = inputs
@@ -221,9 +216,11 @@ def text_multibox_layer(layer,
 	num_prior_per_location = num_anchors * 2
 
 	# Location prediction.
-	# Location 4+8, minimum horizontal bounding box offsets 4 + quadrilateral bounding box offsets 8 = 12.
+	# Location 4+8, [minimum horizontal bounding box offsets-4] + [quadrilateral bounding box offsets-8] = 12.
 	num_loc_pred = num_prior_per_location * 12
 	# num_loc_pred = num_prior_per_location * 4
+
+	# 3x5 conv used in textbox layer.
 	loc_pred = slim.conv2d(net, num_loc_pred, [3, 5], activation_fn=None, padding='SAME', scope='conv_loc')
 	# loc_pred = custom_layers.channel_to_last(loc_pred)
 	loc_pred = slim.flatten(loc_pred)
@@ -251,7 +248,7 @@ def text_net(inputs,
 			 scope='text_box_384',
 			 update_feat_shapes=False):
 	"""
-	Define the backbone(13 original vgg layers + 10 extra conv layers to extract multi-scale feature maps form as SSD)
+	Define the backbone (13 original vgg layers + 10 extra conv layers to extract multi-scale feature maps form as SSD)
 	of the textboxes and the neck net -- 6 textbox layers.
 	:param inputs: input image size
 	:param feat_layers: feature map which connect to the textbox layer
@@ -371,8 +368,6 @@ def textbox_anchor_one_layer(img_shape,
 	"""
 	# Follow the papers scheme
 	# 12 ahchor boxes with out sk' = sqrt(sk * sk+1)
-	### minimum horizontal bounding box offsets 4 + quadrilateral bounding box offsets 8 = 12
-
 	y, x = np.mgrid[0:feat_size[0], 0:feat_size[1]] + offset
 	# vertical offset
 	y_offset = (y.astype(dtype) + offset) * step / img_shape[0]
@@ -416,7 +411,6 @@ def textbox_anchor_one_layer(img_shape,
 	ymax = ymax.reshape([ymax.shape[0], ymax.shape[1], -1], order='F').reshape(-1)
 
 	return xmin, ymin, xmax, ymax
-
 
 
 ## produce anchor for all layers
