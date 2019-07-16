@@ -37,7 +37,7 @@ tf.app.flags.DEFINE_float(
 )
 #TODO: On-line hard negative mining (OHNM) ratio, split to two value for two training stages: 1.nr=3; 2.nr=6.
 tf.app.flags.DEFINE_float(
-	'negative_ratio', 6., #3.
+	'negative_ratio', 3., #6.
     'On-line negative mining ratio in the loss function.'
 )
 # IOU threshold for NMS
@@ -47,7 +47,7 @@ tf.app.flags.DEFINE_float(
 )
 #TODO: Multi-scales training divide into two stages: 1.size=384, lr=10^-4; 2.size=786, lr=10^-5.
 tf.app.flags.DEFINE_boolean(
-	'large_training', True, #False
+	'large_training', False, #True
 	'Use 768 to train'
 )
 # =========================================================================== #
@@ -162,11 +162,11 @@ tf.app.flags.DEFINE_string(
 )
 # TODO: stage1 -> lr 10^-4; stage2 -> lr 10^-5
 tf.app.flags.DEFINE_float(
-	'learning_rate', 0.00001, #0.0001
+	'learning_rate', 0.0001, #0.00001
     'Initial learning rate.'
 )
 tf.app.flags.DEFINE_float(
-	'end_learning_rate', 0.00001, #0.0001
+	'end_learning_rate', 0.0001, #0.00001
     'The minimal end learning rate used by a polynomial decay learning rate.'
 )
 tf.app.flags.DEFINE_float(
@@ -211,7 +211,7 @@ tf.app.flags.DEFINE_integer(
     'class for the ImageNet dataset.'
 )
 tf.app.flags.DEFINE_string(
-	'model_name', 'text_box_768',
+	'model_name', 'text_box_384',
     'The name of the architecture to train.'
 )
 tf.app.flags.DEFINE_string(
@@ -233,7 +233,7 @@ tf.app.flags.DEFINE_string(
 )
 #TODO: stage1 -> 8k; stage2 -> 4k
 tf.app.flags.DEFINE_integer(
-	'max_number_of_steps', 4000, #8000
+	'max_number_of_steps', 120000, #8000
     'The maxim number of training steps.'
 )
 # =========================================================================== #
@@ -241,7 +241,7 @@ tf.app.flags.DEFINE_integer(
 # =========================================================================== #
 #TODO: indicate ckpt path for continuing stage 2 training.
 tf.app.flags.DEFINE_string(
-    'checkpoint_path', './model/model.ckpt-8000.ckpt', #'./model/ckpt/model_pre_train_syn.ckpt'
+    'checkpoint_path', './model/ckpt/model_pre_train_syn.ckpt', #'./model/model.ckpt-8000.ckpt'
     'The path to a checkpoint from which to fine-tune.'
 )
 tf.app.flags.DEFINE_string(
