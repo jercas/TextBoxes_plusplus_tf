@@ -1,10 +1,12 @@
 import os
 import tensorflow as tf
-from datasets import xml2TFRecords
+from datasets import xml2TFrecords
 """
 usage:
-python geneTFrecords.py --xml_img_txt_path=./logs/train_xml.txt --output_dir=tfrecords 
-                        --output_name=annotated_data --samples_per_files=2000
+python geneTFrecords.py --xml_img_txt_path='./logs/train_xml.txt' 
+                        --output_dir='./tfrecords' 
+                        --output_name=annotated_data 
+                        --samples_per_files=2000
 """
 
 tf.app.flags.DEFINE_string(
@@ -12,7 +14,7 @@ tf.app.flags.DEFINE_string(
     'Basename used for TFRecords output files.'
 )
 tf.app.flags.DEFINE_string(
-    'output_dir', 'tfrecords',
+    'output_dir', './tfrecords',
     'Output directory where to store TFRecords files.'
 )
 tf.app.flags.DEFINE_string(
@@ -31,7 +33,7 @@ def main(_):
     print('Dataset directory:', FLAGS.xml_img_txt_path)
     print('Output directory:', FLAGS.output_dir)
 
-    xml2TFRecords.run(FLAGS.xml_img_txt_path, FLAGS.output_dir, FLAGS.output_name, FLAGS.samples_per_files)
+    xml2TFrecords.run(FLAGS.xml_img_txt_path, FLAGS.output_dir, FLAGS.output_name, FLAGS.samples_per_files)
 
 if __name__ == '__main__':
     tf.app.run()

@@ -710,24 +710,16 @@ def nms_eff(boxes_list, score, overlap):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='icdar15 test model')
-    parser.add_argument(
-        '--in_dir',
-        '-i',
-        default=
-        '/home/zsz/datasets/text_det/icdar15/test_images/',
-        type=str)
-    parser.add_argument(
-        '--out_dir', '-o', default='icdar15_scale_test/3000_with', type=str)
-    parser.add_argument(
-        '--model_dir',
-        '-m',
-        default=
-        '/home/zsz/test/dssd_tfmodel/only_10th_data_with_the_new_pic',
-        type=str)
-    parser.add_argument('--cuda_device', '-c', default='3', type=str)
+    parser.add_argument('--in_dir', '-i',
+                        default='./datasets/ICDAR_15/textLocalization/test', type=str)
+    parser.add_argument('--out_dir', '-o',
+                        default='./result', type=str)
+    parser.add_argument('--model_dir', '-m',
+                        default='./model', type=str)
+    parser.add_argument('--cuda_device', '-c', default='6,7', type=str)
     parser.add_argument('--nms_th', '-n', default=0.5, type=float)
     parser.add_argument('--score_th','-s', default=0.1, type=float)
-    parser.add_argument('--save_res_path', '-r', default='eval_res.txt', type=str)
+    parser.add_argument('--save_res_path', '-r', default='./result/eval_res.txt', type=str)
     #2:read gt from txt format:(text score xmin ymin xmax ymax)
     args = parser.parse_args()
     in_dir = args.in_dir

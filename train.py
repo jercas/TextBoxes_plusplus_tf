@@ -353,7 +353,6 @@ def main(_):
                                                         data_format='NHWC', crop_area_range=training_image_crop_area)
 
             # Encode groundtruth labels and bboxes.
-
             image = tf.identity(image, 'processed_image')
 
             glocalisations, gscores, glabels = \
@@ -361,10 +360,8 @@ def main(_):
             batch_shape = [1] + [len(text_anchors)] * 3
 
             # Training batches and queue.
-
             r = tf.train.batch(
-                tf_utils.reshape_list(
-                    [image, glocalisations, gscores, glabels]),
+                tf_utils.reshape_list([image, glocalisations, gscores, glabels]),
                 batch_size=FLAGS.batch_size,
                 num_threads=FLAGS.num_preprocessing_threads,
                 capacity=5 * FLAGS.batch_size)

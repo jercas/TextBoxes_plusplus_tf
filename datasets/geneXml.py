@@ -5,7 +5,13 @@ import time
 import codecs
 import argparse
 import xml.dom.minidom
-
+"""
+usage:
+	python geneXml.py   -i './datasets/ICDAR_15/textLocalization/train' 
+						-s no 
+						-l ./logs 
+						-o './datasets/ICDAR_15/textLocalization/train/xml'
+"""
 
 def process_convert(rootName, txtName, output_dir, GT_Type=False):
 	"""
@@ -16,9 +22,11 @@ def process_convert(rootName, txtName, output_dir, GT_Type=False):
 	:param GT_Type: Choose the gt type rotated rectangle / quadrilateral.
 	:return:
 	"""
-	# Read the txt annotation file.
+	# Read the txt annotation file, */train/gt + gt_img_1.txt -> */train/gt/gt_img_1.txt.
 	file_name = os.path.join(rootName, txtName)
+	# gt_img_1.txt -> img_1.jpg
 	image = txtName[3:-4] + '.jpg'
+	# */train/gt + img_1.jpg -> */train/img_1.jpg
 	img_name  = os.path.join(rootName[:-3], image)
 
 	with codecs.open(file_name, 'r', encoding='utf-8') as f:
@@ -72,25 +80,26 @@ def process_convert(rootName, txtName, output_dir, GT_Type=False):
 
 		if GT_Type is True:
 			# r0 = (xr01; yr01; xr02; yr02; hr0), rotated rectangle - GT
-			xleft_text = str(int(float(l[1])))
-			ytop_text = str(int(float(l[2])))
-			xright_text = str(int(float(l[3])))
-			ybottom_text = str(int(float(l[4])))
+			xmin_text = str(int(float(l[1])))
+			ymin_text = str(int(float(l[2])))
+			xmax_text = str(int(float(l[3])))
+			ymax_text = str(int(float(l[4])))
 
-			x1_text = xleft_text
-			x2_text = xright_text
-			x3_text = xright_text
-			x4_text = xleft_text
+			x1_text = xmin_text
+			x2_text = xmax_text
+			x3_text = xmax_text
+			x4_text = xmin_text
 
-			y1_text = ytop_text
-			y2_text = ytop_text
-			y3_text = ybottom_text
-			y4_text = ybottom_text
+			y1_text = ymin_text
+			y2_text = ymin_text
+			y3_text = ymax_text
+			y4_text = ymax_text
 
 		else:
 			# q0 = (xq01; yq01; xq02; yq02; xq03; yq03; xq04; yq04), quadrilateral - GT
-			xs = [ int(l[i])  for i in (0, 2, 4, 6)]
+			xs = [ int(l[i]) for i in (0, 2, 4, 6)]
 			ys = [ int(l[i]) for i in (1, 3, 5, 7)]
+			# The diagonal points of the minimum horizontal rectangle
 			xmin_text = str(min(xs))
 			ymin_text = str(min(ys))
 			xmax_text = str(max(xs))
@@ -166,7 +175,6 @@ def process_convert(rootName, txtName, output_dir, GT_Type=False):
 		nodeBndbox.appendChild(nodeymin)
 		nodeBndbox.appendChild(nodexmax)
 		nodeBndbox.appendChild(nodeymax)
-
 		#<coordinates x1, y1, x2, y2, x3, y3, x4, y4, xmin, ymin, xmax, ymax>
 		nodeObject.appendChild(nodeBndbox)
 		#</bndbox>
@@ -196,15 +204,18 @@ def get_all_txt(directory, split_flag, logs_dir, output_dir, GT_Type=False):
 		os.makedirs(output_dir)
 
 	start_time = time.time()
-	for root,dirs,files in os.walk(directory):
+	for root, dirs, files in os.walk(directory):
 		for file in files:
 			if file.split('.')[-1] == 'txt':
+				# */train/gt/gt_img_1.txt -> */train/gt/gt_img_1.xml
 				xml_path = os.path.join(root, file[:-4] + '.xml')
+				# */train/gt/gt_img_1.txt -> */train/img_1.jpg
 				img_path = os.path.join(root[:-3], file[3:-4] + '.jpg')
 
 				if output_dir:
 					if not os.path.exists(output_dir):
 						os.makedirs(output_dir)
+					# */train/gt/gt_img_1.xml -> */train/xml/gt_img_1.xml
 					save_xml_path = os.path.join(output_dir, file[:-4] + '.xml')
 				else:
 					save_xml_path = xml_path
@@ -216,6 +227,7 @@ def get_all_txt(directory, split_flag, logs_dir, output_dir, GT_Type=False):
 				print(count, img_path)
 				if count % 1000 == 0:
 					print(count, time.time() - start_time)
+
 	save_to_text(img_path_list, xml_path_list, count, split_flag, logs_dir)
 	print('all over:', count)
 	print('time:', time.time() - start_time, '\n')

@@ -12,7 +12,7 @@ sys.path.append('./')
 from nets import txtbox_384, np_methods, txtbox_768
 from processing import ssd_vgg_preprocessing
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3' #using GPU 0
+os.environ['CUDA_VISIBLE_DEVICES'] = '6,7' #using GPU 0
 
 def plt_bboxes(img, classes, scores, bboxes, figsize=(10,10), linewidth=1.5):
     """Visualize bounding boxes. Largely inspired by SSD-MXNET!
