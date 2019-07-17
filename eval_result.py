@@ -1,11 +1,11 @@
 import os
 import time
-import numpy as np
 import tensorflow as tf
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 scheduler = BlockingScheduler()
 model_dir = './model'
+
 def eval_net():
     # ckpt_list = tf.train.get_checkpoint_state(model_dir).all_model_checkpoint_paths
     # for ckpt_path in ckpt_list:
@@ -17,5 +17,4 @@ def eval_net():
 
 eval_net()
 scheduler.add_job(eval_net, 'interval', seconds=1200)
-
 scheduler.start()

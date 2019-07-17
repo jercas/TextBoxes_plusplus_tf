@@ -20,7 +20,7 @@ from tensorflow.python.ops import control_flow_ops
 
 from tf_extended import tf_utils
 from deployment import model_deploy
-from datasets import TFrecords2dataset
+from datasets import TFrecords2Dataset
 from nets import txtbox_384, txtbox_768
 from processing import ssd_vgg_preprocessing
 
@@ -60,7 +60,7 @@ tf.app.flags.DEFINE_string(
 # TODO:GPU number configuration
 tf.app.flags.DEFINE_integer(
 	'num_clones', 2,
-    'Number of model clones to deploy.'
+    'Number of model clones to GPU deploy.'
 )
 tf.app.flags.DEFINE_boolean(
 	'clone_on_cpu', False,
@@ -291,7 +291,7 @@ def main(_):
             global_step = slim.create_global_step()
 
         # Select the dataset.
-        dataset = TFrecords2dataset.get_datasets(FLAGS.dataset_dir)
+        dataset = TFrecords2Dataset.get_datasets(FLAGS.dataset_dir)
 
         # Get the TextBoxes++ network and its anchors.
         text_net = txtbox_384.TextboxNet()
@@ -299,15 +299,15 @@ def main(_):
         # Stage 2 training using the 768x768 input size.
         if FLAGS.large_training:
             # replace the input image shape and the extracted feature map size from each indicated layer which
-            # associated to each textbox layer.
+            #associated to each textbox layer.
             text_net.params = text_net.params._replace(img_shape = (768, 768))
             text_net.params = text_net.params._replace(feat_shapes = [(96, 96), (48,48), (24, 24), (12, 12), (10, 10), (8, 8)])
 
-        text_shape = text_net.params.img_shape
-        print('text_shape: ' + str(text_shape))
+        img_shape = text_net.params.img_shape
+        print('img_shape: ' + str(img_shape))
 
-        # Compute the default anchor boxes with the given image shape.
-        text_anchors = text_net.anchors(text_shape)
+        # Compute the default anchor boxes with the given image shape, get anchor list.
+        text_anchors = text_net.anchors(img_shape)
 
         # Print the training configuration before training.
         tf_utils.print_configuration(FLAGS.__flags, text_net.params, dataset.data_sources, FLAGS.train_dir)
@@ -316,6 +316,7 @@ def main(_):
         # Create a dataset provider and batches.
         # =================================================================== #
         with tf.device(deploy_config.inputs_device()):
+            # setting the dataset provider
             with tf.name_scope(FLAGS.dataset_name + '_data_provider'):
                 provider = slim.dataset_data_provider.DatasetDataProvider(
                     dataset,
@@ -349,7 +350,7 @@ def main(_):
 
             image, glabels, gbboxes, gxs, gys= \
                 ssd_vgg_preprocessing.preprocess_for_train(image, glabels, gbboxes, gxs, gys,
-                                                        text_shape,
+                                                        img_shape,
                                                         data_format='NHWC', crop_area_range=training_image_crop_area)
 
             # Encode groundtruth labels and bboxes.
@@ -407,7 +408,7 @@ def main(_):
                 batch_size=FLAGS.batch_size)
             return end_points
 
-        # Gather initial summaries.
+        # Gather initial tensorboard summaries.
         summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
 
         # =================================================================== #
@@ -428,12 +429,12 @@ def main(_):
             summaries.add(
                 tf.summary.scalar('sparsity/' + end_point,
                                   tf.nn.zero_fraction(x)))
-        # Add summaries for losses and extra losses.
+        # Add summaries for losses.
         for loss in tf.get_collection(tf.GraphKeys.LOSSES):
             summaries.add(tf.summary.scalar(loss.op.name, loss))
+        # Add summaries for extra losses.
         for loss in tf.get_collection('EXTRA_LOSSES'):
             summaries.add(tf.summary.scalar(loss.op.name, loss))
-
         # Add summaries for variables.
         for variable in slim.get_model_variables():
             summaries.add(tf.summary.histogram(variable.op.name, variable))
@@ -454,7 +455,9 @@ def main(_):
         with tf.device(deploy_config.optimizer_device()):
             learning_rate = tf_utils.configure_learning_rate(
                 FLAGS, dataset.num_samples, global_step)
-            optimizer = tf_utils.configure_optimizer(FLAGS, learning_rate)
+            optimizer = tf_utils.configure_optimizer(
+                FLAGS, learning_rate)
+            # Add summaries for learning_rate.
             summaries.add(tf.summary.scalar('learning_rate', learning_rate))
 
         if FLAGS.moving_average_decay:
@@ -468,8 +471,8 @@ def main(_):
         # and returns a train_tensor and summary_op
         total_loss, clones_gradients = model_deploy.optimize_clones(
             clones, optimizer, var_list=variables_to_train)
-        # Add total_loss to summary.
 
+        # Add total_loss to summary.
         summaries.add(tf.summary.scalar('total_loss', total_loss))
 
         # Create gradient updates.

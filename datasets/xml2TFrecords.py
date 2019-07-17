@@ -37,11 +37,11 @@ def _process_image(train_img_path, train_xml_path, name):
 		return
 	shape = [height, width, depth]
 	##</size>>
-	bboxes = []
 	labels = []
 	labels_text = []
 	difficult = []
 	truncated = []
+	bboxes = []
 	oriented_bbox = []
 	ignored = 0
 	#<filename>
@@ -51,23 +51,24 @@ def _process_image(train_img_path, train_xml_path, name):
 	for obj in root.findall('object'):
 		#<name>
 		label = obj.find('name').text
-		if label == 'none':
-			label = 'none'
-		else:
-			label = 'text'
 		labels.append(int(TXT_LABELS[label][0]))
-		labels_text.append(label.encode('ascii'))
 		#</name>
+		#<content>
+		label_text = obj.find('content').text
+		labels_text.append(label_text.encode('ascii'))
+		#</content>
 		#<difficult>
 		if obj.find('difficult') is not None:
 			difficult.append(int(obj.find('difficult').text))
 		else:
 			difficult.append(0)
 		#</difficult>
+		#<truncated>
 		if obj.find('truncated'):
 			truncated.append(int(obj.find('truncated').text))
 		else:
 			truncated.append(0)
+		#<truncated>
 		#<bndbox>
 		bbox = obj.find('bndbox')
 		ymin = float(bbox.find('ymin').text)
@@ -85,16 +86,16 @@ def _process_image(train_img_path, train_xml_path, name):
 		y3 = float(bbox.find('y3').text)
 		y4 = float(bbox.find('y4').text)
 
+		xmin, xmax = np.clip([xmin, xmax], 0, width)
 		ymin, ymax = np.clip([ymin, ymax], 0 , height)
-		xmin, xmax = np.clip([xmin, xmax] ,0 , width)
 
 		x1, x2, x3, x4 = np.clip([x1, x2, x3, x4], 0, width)
 		y1, y2, y3, y4 = np.clip([y1, y2, y3, y4], 0, height)
 
-		bboxes.append(( ymin / shape[0],
-						xmin / shape[1],
-						ymax / shape[0],
-						xmax / shape[1]))
+		bboxes.append(( ymin / height,
+						xmin / width,
+						ymax / height,
+						xmax / width))
 
 		oriented_bbox.append((x1 / width, x2 / width, x3 / width, x4 / width,
 		                      y1 / height, y2 / height, y3 / height, y4 / height))
@@ -209,8 +210,6 @@ def run(xml_img_txt_path, output_dir, output_name, samples_per_files=200):
 	with open(xml_img_txt_path, 'r') as f:
 		lines = f.readlines()
 
-	#train_txt = open(xml_img_txt_path, 'r')
-	#lines = train_txt.readlines()
 	train_img_path = []
 	train_xml_path = []
 	error_list = []

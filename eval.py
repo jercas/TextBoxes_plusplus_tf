@@ -1,14 +1,13 @@
-#! -*- encoding: utf-8 -*-
-import numpy as np
-import cv2
 import os
-from argparse import ArgumentParser
-
-import xml.etree.ElementTree as ET
-import shutil
+import cv2
 import sys
+import numpy as np
 import matplotlib.pyplot as plt
+from argparse import ArgumentParser
+import xml.etree.ElementTree as ET
+
 info = sys.version_info
+# if using py 2.*, otherwise ignore the transform from byte to str.
 if int(info[0]) == 2:
     reload(sys)
     sys.setdefaultencoding('utf-8')  # 设置 'utf-8'

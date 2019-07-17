@@ -14,17 +14,29 @@ import tensorflow.contrib.slim as slim
 # Text class definition.
 # =========================================================================== #
 # Define a namedtuple data structure to keep the params of TextboxNet class.
-TextboxParams = namedtuple('TextboxParameters', [
-	'img_shape', 'num_classes', 'feat_layers', 'feat_shapes',
-	'anchor_ratios', 'anchor_sizes', 'anchor_steps', 'normalizations',
-	'prior_scaling'
+TextboxParams = namedtuple('TextboxParameters',['img_shape',
+												'num_classes',
+												'feat_layers',
+												'feat_shapes',
+												'anchor_ratios',
+												'anchor_sizes',
+												'anchor_steps', #辅助放缩搜索网格中心点的位置
+												'normalizations',
+												'prior_scaling'
 ])
 
 
 class TextboxNet(object):
 	"""
 	Implementation of the Textbox 384 network.
-	The default image size used to train this network is '384x384'.
+	The default features layers with 384x384 image input are:
+      conv4  ==> 48 x 48
+      conv7  ==> 24 x 24
+      conv8  ==> 12 x 12
+      conv9  ==> 6 x 6
+      conv10 ==> 4 x 4
+      conv11 ==> 2 x 2
+    The default image size used to train this network is 384x384.
 	Stage 1: 384x384， Stage 2: 768x768.
 	"""
 	default_params = TextboxParams(
@@ -52,6 +64,7 @@ class TextboxNet(object):
 			(210., 270.),
 			(270., 330.)
 		],
+		# 辅助放缩搜索网格中心点的位置
 		anchor_steps=[8, 16, 32, 64, 100, 300],
 		normalizations=[20, -1, -1, -1, -1, -1],
 		prior_scaling=[0.1, 0.1, 0.2, 0.2])  #step  8 16 32 64 96 192
@@ -92,18 +105,22 @@ class TextboxNet(object):
 			scope=scope,
 			update_feat_shapes=update_feat_shapes)
 		# Update feature shapes (try at least!)
-		# TODO: change the feature map size for larger input image size 384 -> 768
+		# feat_shape: [(48, 48), (24, 24), (12, 12), (6, 6), (4, 4), (2, 2)]
 		if update_feat_shapes:
+			#TODO: r[0]：各选中层预测结果，predictions of r[-1]: 各选中层的feature shape?
+			# 获取各个中间层shape（不含0维），如果含有None则返回默认的feat_shapes
 			shapes = textboxes_feat_shapes_from_net(r[-1],
 													self.params.feat_shapes)
 			self.params = self.params._replace(feat_shapes=shapes)
 		print(self.default_params.feat_shapes)
 		return r
 
+
 	def arg_scope(self, weight_decay=0.0005, data_format='NHWC'):
 		"""Get the defined Network arg_scope Encapsulation.
 		"""
 		return ssd_arg_scope(weight_decay, data_format=data_format)
+
 
 	def arg_scope_caffe(self, caffe_scope):
 		"""Get the defined Caffe arg_scope Encapsulation used for weights importing.
@@ -111,21 +128,19 @@ class TextboxNet(object):
 		return ssd_arg_scope_caffe(caffe_scope)
 
 	# ======================================================================= #
-	'''
-	def update_feature_shapes(self, predictions):
-		"""Update feature shapes from predictions collection (Tensor or Numpy
-		array).
-		"""
-		shapes = ssd_feat_shapes_from_net(predictions, self.params.feat_shapes)
-		self.params = self.params._replace(feat_shapes=shapes)
-	'''
+
 
 	def anchors(self, img_shape, dtype=np.float32):
 		"""Compute the default anchor boxes, given an image shape.
 		"""
 		return textbox_anchor_all_layers(
-			img_shape, self.params.feat_shapes, self.params.anchor_ratios,
-			self.params.anchor_sizes, self.params.anchor_steps, 0.5, dtype)
+			img_shape,
+			self.params.feat_shapes,
+			self.params.anchor_ratios,
+			self.params.anchor_sizes,
+			self.params.anchor_steps,
+			0.5, dtype)
+
 
 	def bboxes_encode(self,
 					  glabels,
@@ -145,6 +160,7 @@ class TextboxNet(object):
 			matching_threshold=0.5,
 			prior_scaling=self.params.prior_scaling,
 			scope=scope)
+
 
 	def losses(self,
 			   logits,
@@ -208,33 +224,41 @@ def text_multibox_layer(layer,
 	net = inputs
 	if normalization > 0:
 		net = custom_layers.l2_normalization(net, scaling=True)
+
+	num_classes = 2
 	# Number of anchors, 8+2.
 	num_anchors = len(anchor_ratio) + len(anchor_size)
-	# Text classification scores / conference.
-	num_classes = 2
 	# Vertical offsets.
 	num_prior_per_location = num_anchors * 2
 
 	# Location prediction.
-	# Location 4+8, [minimum horizontal bounding box offsets-4] + [quadrilateral bounding box offsets-8] = 12.
-	num_loc_pred = num_prior_per_location * 12
-	# num_loc_pred = num_prior_per_location * 4
-
-	# 3x5 conv used in textbox layer.
-	loc_pred = slim.conv2d(net, num_loc_pred, [3, 5], activation_fn=None, padding='SAME', scope='conv_loc')
+	# Location 4+8 coordinates, [minimum horizontal bounding box offsets-4] + [quadrilateral bounding box offsets-8] = 12.
+	num_loc_pred = num_prior_per_location * 12      # num_loc_pred = num_prior_per_location * 4
+	loc_pred = slim.conv2d(net, num_loc_pred, [3, 5], activation_fn=None,    # 3x5 conv used in textbox layer.
+	                       padding='SAME', scope='conv_loc')
+	# TODO： different from ssd300
+	# transform to NHWC
 	# loc_pred = custom_layers.channel_to_last(loc_pred)
 	loc_pred = slim.flatten(loc_pred)
 	l_shape = loc_pred.shape
 	batch_size = l_shape[0]
 	loc_pred = tf.reshape(loc_pred, [batch_size, -1, 12])
+	# NHW(num_anchors+4) --> [NHW, num_anchors, 4]
+	# loc_pred = tf.reshape(loc_pred, tensor_shape(loc_pred, 4)[:-1]+[num_anchors, 4])
 
 	# Class prediction.
-	scores_pred = num_prior_per_location * num_classes
-	sco_pred = slim.conv2d(net, scores_pred, [3, 5], activation_fn=None, padding='SAME',scope='conv_cls')
-	l_shape = tf.shape(sco_pred)
-	sco_pred = slim.flatten(sco_pred)
-	sco_pred = tf.reshape(sco_pred, [batch_size, -1 ,2])
-	return sco_pred, loc_pred, l_shape
+	num_cls_pred = num_prior_per_location * num_classes
+	cls_pred = slim.conv2d(net, num_cls_pred, [3, 5], activation_fn=None,
+	                       padding='SAME',scope='conv_cls')
+	# transform to NHWC
+	# cls_pred = custom_layers.channel_to_last(cls_pred)
+	l_shape = tf.shape(cls_pred)
+	cls_pred = slim.flatten(cls_pred)
+	cls_pred = tf.reshape(cls_pred, [batch_size, -1 ,2])
+	# NHW(num_anchors+classes) --> [NHW, num_anchors, classes]
+	# cls_pred = tf.reshape(cls_pred, tensor_shape(cls_pred, 4)[:-1]+[num_anchors, num_classes])
+
+	return cls_pred, loc_pred, l_shape
 
 
 def text_net(inputs,
@@ -262,9 +286,14 @@ def text_net(inputs,
 	:param update_feat_shapes: 
 	:return: [predictions, localisations, logits, end_points, shape_list(if update_feat_shapes=True)]
 	"""
+	# End_points collect relevant activations for external use.
 	end_points = {}
 	with tf.variable_scope(scope, 'text_box_300', [inputs], reuse=reuse):  # 300*300 384*384
-		# Original VGG-16 blocks, total 13 layers.
+		######################################
+		# 前五个 Blocks，首先照搬 VGG16 架构   #
+		# 注意这里使用 end_points 标注中间结果  #
+		######################################
+		# ——————————————————Original VGG-16 blocks (total 13 conv layers)———————————————————————
 		# Block 1.
 		net = slim.repeat(inputs, 2, slim.conv2d, 64, [3, 3], scope='conv1')  # 300 384
 		end_points['conv1'] = net
@@ -285,9 +314,12 @@ def text_net(inputs,
 		# Block 5.
 		net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv5')  # 19
 		end_points['conv5'] = net
-		net = slim.max_pool2d(net, [3, 3], stride=1, scope='pool5')  # 19
+		net = slim.max_pool2d(net, [3, 3], stride=1, scope='pool5')  # 19  Pooling size 2 -> 3
 
-		# Additional SSD blocks.
+		####################################
+		# 后六个 Blocks，使用额外卷积层      #
+		####################################
+		# ————————————Additional SSD blocks.——————————————————————
 		# Block 6: let's dilate the hell out of it!  dilation -> 6
 		net = slim.conv2d(net, 1024, [3, 3], rate=6, scope='conv6')  # 19
 		end_points['conv6'] = net
@@ -296,7 +328,7 @@ def text_net(inputs,
 		net = slim.conv2d(net, 1024, [1, 1], scope='conv7')  # 19
 		end_points[end_point] = net
 
-		# Block 8/9/10/11: 1x1 and 3x3 convolutions stride 2
+		# Block 8/9/10/11: 1x1 and 3x3 convolutions stride 2 (except lasts).
 		end_point = 'conv8'
 		with tf.variable_scope(end_point):
 			net = slim.conv2d(net, 256, [1, 1], scope='conv1x1')
@@ -323,22 +355,27 @@ def text_net(inputs,
 			net = slim.conv2d(net, 256, [3, 3], scope='conv3x3', padding='VALID')
 		end_points[end_point] = net  #
 
+		######################################
+		# 每个中间层 end_points 返回中间结果   #
+		# 将各层预测结果存入列表，返回给优化函数 #
+		######################################
 		# Prediction and localisations layers.
 		predictions = []
 		logits = []
 		localisations = []
 		shape_list = []
+		# feat_layers=['conv4', 'conv7', 'conv8', 'conv9', 'conv10', 'conv11']
 		for i, layer in enumerate(feat_layers):
 			with tf.variable_scope(layer + '_box'):
-				p, loc, shape = text_multibox_layer(layer,
+				cls, loc, shape = text_multibox_layer(layer,
 											 end_points[layer],
 											 anchor_sizes[i],
 											 anchor_ratios[i],
 											 normalizations[i])
 			prediction_fn = slim.softmax
 			# Prediction of conference and bbox location of each textbox layer.
-			predictions.append(prediction_fn(p))
-			logits.append(p)
+			predictions.append(prediction_fn(cls))
+			logits.append(cls)
 			localisations.append(loc)
 			shape_list.append(shape)
 
@@ -348,58 +385,60 @@ def text_net(inputs,
 			return predictions, localisations, logits, end_points
 
 
-def textbox_anchor_one_layer(img_shape,
-							 feat_size,
-							 ratios,
-							 size,
-							 step,
-							 offset=0.5,
-							 dtype=np.float32):
-	"""Computer TextBoxes++ default anchor boxes for each one feature layer.
-		each feature point has 12 default textboxes (6 boxes + 6 offsets vertical boxes).
-		Determine the relative position grid of the centers, and the relative width and height.
+def textbox_anchor_one_layer(img_shape, feat_shape, ratios, size, step, offset=0.5, dtype=np.float32):
+	"""
+		Computer TextBoxes++ default anchor boxes for each feature layer.
+		Each feature point has 12 default textboxes (6 default boxes + 6 offsets vertical boxes).
+		Determine the relative position grid of the centers and the relative width and height.
 
-	:param: feat_shape: Feature shape, used for computing relative position grids;
-	:param: ratios: Ratios to use on these features;
 	:param: img_shape: Image shape, used for computing height, width relatively to the former;
-	:param:offset: Grid offset.
+	:param: feat_shape: Feature shape of each layer which connect to textbox layer, used for computing relative position grids;
+	:param: ratios: Anchor Aspect ratios to use on these features;
+	:param: size: Anchor size;
+	:param: step:
+	:param:offset: Anchor vertical offset.
 
-	:return: y, x, h, w: Relative x and y grids, and height and width.
+	:return: y, x, h, w: Relative x and y grids, and height and width of a anchor associated to a textbox layer.
 	"""
 	# Follow the papers scheme
-	# 12 ahchor boxes with out sk' = sqrt(sk * sk+1)
-	y, x = np.mgrid[0:feat_size[0], 0:feat_size[1]] + offset
-	# vertical offset
-	y_offset = (y.astype(dtype) + offset) * step / img_shape[0]
+	# 12 ahchors boxes with out sk' = sqrt(sk * sk+1), 生成feat_shape中HW对应的网格坐标
+	y, x = np.mgrid[0:feat_shape[0], 0:feat_shape[1]] + offset
+
+	# vertical offset, step*feat_shape 约等于img_shape，这使得网格点坐标介于0~1，放缩一下即可到图像大小
 	y = y.astype(dtype) * step / img_shape[0]
 	x = x.astype(dtype) * step / img_shape[1]
+	y_offset = (y.astype(dtype) + offset) * step / img_shape[0]
 	x_offset = x
 
 	#38,38,2 origin and offset
 	x_out = np.stack((x, x_offset), -1)
 	y_out = np.stack((y, y_offset), -1)
-	# add dims
+
+	# Expand dims to support easy broadcasting
 	y_out = np.expand_dims(y_out, axis=-1)
 	x_out = np.expand_dims(x_out, axis=-1)
 
-	#
+	# Compute relative height and width.
 	num_anchors = len(ratios) + len(size)
 	h = np.zeros((num_anchors,), dtype=dtype)
 	w = np.zeros((num_anchors,), dtype=dtype)
-	# first prior
+
+	# Add first anchor boxes with ratio=1
 	h[0] = size[0] / img_shape[0]
 	w[0] = size[0] / img_shape[1]
 	di = 1
+
 	if len(size) > 1:
 		h[1] = math.sqrt(size[0] * size[1]) / img_shape[0]
 		w[1] = math.sqrt(size[0] * size[1]) / img_shape[1]
 		di += 1
 
 	for i, r in enumerate(ratios):
-		h[i+di] = size[0] / img_shape[0] /math.sqrt(r)
+		h[i+di] = size[0] / img_shape[0] / math.sqrt(r)
 		w[i+di] = size[0] / img_shape[1] * math.sqrt(r)
-		# h[i] = scale / math.sqrt(r) / feat_size[0]
-		# w[i] = scale * math.sqrt(r) / feat_size[1]
+		# h[i] = scale / math.sqrt(r) / feat_shape[0]
+		# w[i] = scale * math.sqrt(r) / feat_shape[1]
+
 	xmin = x_out - w/2
 	ymin = y_out - h/2
 	xmax = x_out + w/2
@@ -415,7 +454,7 @@ def textbox_anchor_one_layer(img_shape,
 
 ## produce anchor for all layers
 def ssd_arg_scope(weight_decay=0.0005, data_format='NHWC'):
-	"""Defines the VGG arg scope.
+	"""Defines the VGG arg scope, 约束网络中的超参数设定.
 
 	Args:
 	  weight_decay: The l2 regularization coefficient.
@@ -434,32 +473,29 @@ def ssd_arg_scope(weight_decay=0.0005, data_format='NHWC'):
 				padding='SAME',
 				data_format=data_format):
 			with slim.arg_scope(
-				[
-					custom_layers.pad2d, custom_layers.l2_normalization,
-					custom_layers.channel_to_last
-				],
-					data_format=data_format) as sc:
+				[custom_layers.pad2d,
+				 custom_layers.l2_normalization,
+				 custom_layers.channel_to_last],
+				data_format=data_format) as sc:
 				return sc
 
 
-def textbox_anchor_all_layers(img_shape,
-							 layers_shape,
-							 anchor_ratios,
-							 anchor_sizes,
-							 anchor_steps,
-							 offset=0.5,
-							 dtype=np.float32):
+def textbox_anchor_all_layers(img_shape, layers_shape, anchor_ratios, anchor_sizes, anchor_steps,
+                              offset=0.5, dtype=np.float32):
 	"""
-	Compute anchor boxes for all feature layers.
-
-	Args:
-		offset: vertical offset which used to cover all text and
+		Compute anchor boxes for all feature layers.
+	:param img_shape:
+	:param layers_shape:
+	:param anchor_ratios:
+	:param anchor_sizes:
+	:param anchor_steps:
+	:param offset: vertical offset which used to cover all text and
 			makes the anchors dense in the vertical orientation.
-
-	Return:
-		the anchors list
+	:param dtype:
+	:return: the anchors list of each layer
 	"""
 	layers_anchors = []
+	# layers_shape: [(48, 48), (24, 24), (12, 12), (6, 6), (4, 4), (2, 2)]
 	for i, s in enumerate(layers_shape):
 		anchor_bboxes = textbox_anchor_one_layer(img_shape, s,
 												 anchor_ratios[i],
@@ -500,11 +536,8 @@ def ssd_arg_scope_caffe(caffe_scope):
 # =========================================================================== #
 # Text loss function.
 # =========================================================================== #
-def ssd_losses(logits,
-			   localisations,
-			   glabels,
-			   glocalisations,
-			   gscores,
+def ssd_losses(logits, localisations,
+			   glabels, glocalisations, gscores,
 			   match_threshold=0.5,
 			   negative_ratio=3.,
 			   alpha=0.2,
@@ -576,6 +609,7 @@ def ssd_losses(logits,
 		# Final negative mask.
 		nmask = tf.logical_and(nmask, nvalues < max_hard_pred)
 		fnmask = tf.cast(nmask, dtype)
+
 		# Add cross-entropy loss.
 		# logits [batch_size, num_classes] labels [batch_size] ~ 0,num_class
 		with tf.name_scope('cross_entropy_pos'):

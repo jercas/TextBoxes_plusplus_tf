@@ -287,8 +287,7 @@ def preprocess_for_train(image, labels, bboxes, xs, ys,
         #tf_summary_image(dst_image, bboxes, 'image_shape_distorted')
 
         # Randomly flip the image horizontally.
-        #bboxes and xs ys all need to random 
-
+        #bboxes and xs ys all need to random
         dst_image, bboxes, xs, ys = tf_image.random_flip_left_right(dst_image, bboxes, xs, ys)
 
         # Randomly distort the colors. There are 4 ways to do it.
@@ -301,9 +300,10 @@ def preprocess_for_train(image, labels, bboxes, xs, ys,
 
         # Rescale to VGG input scale.
         image = tf.to_float(tf.image.convert_image_dtype(dst_image, orig_dtype, saturate=True))
+        image = _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN] )
         # image = dst_image * 255.
         # image = tf_image_whitened(image, [_R_MEAN, _G_MEAN, _B_MEAN])
-        image = _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN] )
+
         # Image data format.
         if data_format == 'NCHW':
             image = tf.transpose(image, perm=(2, 0, 1))

@@ -160,13 +160,16 @@ class ImageCoder(object):
     self._decode_jpeg_data = tf.placeholder(dtype=tf.string)
     self._decode_jpeg = tf.image.decode_jpeg(self._decode_jpeg_data, channels=3)
 
+
   def png_to_jpeg(self, image_data):
     return self._sess.run(self._png_to_jpeg,
                           feed_dict={self._png_data: image_data})
 
+
   def cmyk_to_rgb(self, image_data):
     return self._sess.run(self._cmyk_to_rgb,
                           feed_dict={self._cmyk_data: image_data})
+
 
   def decode_jpeg(self, image_data):
     image = self._sess.run(self._decode_jpeg,

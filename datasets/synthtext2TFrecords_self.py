@@ -146,8 +146,6 @@ def get_split(split_name, dataset_dir, file_pattern, num_samples, reader=None):
             labels_to_names=labels_to_names)
 
 
-
-
 class SynthTextDataFetcher():
     def __init__(self, mat_path, root_path):
         self.mat_path = mat_path
@@ -276,7 +274,7 @@ def cvt_to_tfrecords(output_path , data_path, gt_path, records_per_file = 30000)
                 example = convert_to_example(image_data, image_name, labels, ignored, txts, rect_bboxes, oriented_bboxes, shape)
                 tfrecord_writer.write(example.SerializeToString())
                 record_count += 1
-                
+
         fid += 1
                     
 if __name__ == "__main__":
@@ -284,4 +282,6 @@ if __name__ == "__main__":
     root_path = util.io.get_absolute_path('/share/SynthText/')
     output_dir = util.io.get_absolute_path('/home/zsz/datasets/synth-tf/')
     util.io.mkdir(output_dir)
-    cvt_to_tfrecords(output_path = util.io.join_path(output_dir,  'SynthText_%d.tfrecord'), data_path = root_path, gt_path = mat_path)
+    cvt_to_tfrecords(output_path = util.io.join_path(output_dir, 'SynthText_%d.tfrecord'),
+                     data_path = root_path,
+                     gt_path = mat_path)

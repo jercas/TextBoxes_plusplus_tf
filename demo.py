@@ -20,7 +20,7 @@ def plt_bboxes(img, classes, scores, bboxes, figsize=(10,10), linewidth=1.5):
     height = img.shape[0]
     width = img.shape[1]
     colors = dict()
-    for i in range(classes.shape[0]):
+    for _ in range(classes.shape[0]):
         cls_id = int(classes[i])
         if cls_id >= 0:
             score = scores[i]
@@ -34,19 +34,18 @@ def plt_bboxes(img, classes, scores, bboxes, figsize=(10,10), linewidth=1.5):
             img = cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (255, 0, 0))
     return img
 
+# configure tf GPU using options.
 gpu_options = tf.GPUOptions(allow_growth=False, per_process_gpu_memory_fraction=0.3)
-
 config = tf.ConfigProto(log_device_placement=False, gpu_options=gpu_options)
 isess = tf.Session(config=config) 
 
 # Input placeholder.
 net_shape = (384, 384)
 #net_shape = (768, 768)
-data_format = 'NHWC'
 img_input = tf.placeholder(tf.float32, shape=(None, None, 3))
 # Evaluation pre-processing: resize to SSD net shape.
 image_pre, labels_pre, bboxes_pre, bbox_img, xs, ys = ssd_vgg_preprocessing.preprocess_for_eval(
-    img_input, None, None,None, None, net_shape, data_format, resize=ssd_vgg_preprocessing.Resize.WARP_RESIZE)
+    img_input, None, None,None, None, net_shape, data_format='NHWC', resize=ssd_vgg_preprocessing.Resize.WARP_RESIZE)
 image_4d = tf.expand_dims(image_pre, 0)
 image_4d = tf.cast(image_4d, tf.float32)
 # Define the txt_box model.
@@ -56,7 +55,7 @@ txt_net = txtbox_384.TextboxNet()
 print(txt_net.params.img_shape)
 print('reuse:',reuse)
 
-with slim.arg_scope(txt_net.arg_scope(data_format=data_format)):
+with slim.arg_scope(txt_net.arg_scope(data_format='NHWC')):
     predictions,localisations, logits, end_points = txt_net.net(image_4d, is_training=False, reuse=reuse)
 
 ckpt_dir = 'model'
@@ -109,4 +108,3 @@ if ckpt_dir and ckpt_filename:
     print('detection finished')
 else:
     raise ('no ckpt')
-
