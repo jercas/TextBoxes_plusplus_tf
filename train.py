@@ -493,7 +493,8 @@ def main(_):
         # Kicks off the training.
         # =================================================================== #
         gpu_options = tf.GPUOptions(
-            per_process_gpu_memory_fraction=FLAGS.gpu_memory_fraction)
+            per_process_gpu_memory_fraction=FLAGS.gpu_memory_fraction,
+            allow_growth=FLAGS.allow_growth)
 
         config = tf.ConfigProto(
             log_device_placement=False,
