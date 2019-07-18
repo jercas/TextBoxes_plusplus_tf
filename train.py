@@ -72,7 +72,7 @@ tf.app.flags.DEFINE_integer(
     'The frequency with which the model is saved, in seconds.'
 )
 tf.app.flags.DEFINE_float(
-	'gpu_memory_fraction', 0.8,
+	'gpu_memory_fraction', 0.9,
 	'GPU memory fraction to use.'
 )
 tf.app.flags.DEFINE_boolean(
