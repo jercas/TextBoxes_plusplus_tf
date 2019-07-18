@@ -1,18 +1,3 @@
-# Copyright 2016 Paul Balanca. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-"""Generic training script that trains a SSD model using a given dataset."""
 import os
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
@@ -162,11 +147,11 @@ tf.app.flags.DEFINE_string(
 )
 # TODO: stage1 -> lr 10^-4; stage2 -> lr 10^-5
 tf.app.flags.DEFINE_float(
-	'learning_rate', 0.0001, #0.00001
+	'learning_rate', 1e-4, #0.00001
     'Initial learning rate.'
 )
 tf.app.flags.DEFINE_float(
-	'end_learning_rate', 0.0001, #0.00001
+	'end_learning_rate', 1e-5, #0.00001
     'The minimal end learning rate used by a polynomial decay learning rate.'
 )
 tf.app.flags.DEFINE_float(
@@ -178,7 +163,7 @@ tf.app.flags.DEFINE_float(
     'Learning rate decay factor.'
 )
 tf.app.flags.DEFINE_float(
-	'num_epochs_per_decay', 40000,
+	'num_epochs_per_decay', 80000,
     'Number of epochs after which learning rate decays.'
 )
 tf.app.flags.DEFINE_float(
