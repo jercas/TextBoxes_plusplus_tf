@@ -6,12 +6,11 @@ import os
 import logging
 import time
 import xml.dom.minidom
-
+import cv2
+import codecs
 import numpy as np
 import tensorflow as tf
-import cv2
 import tensorflow.contrib.slim as slim
-import codecs
 from nets import np_methods, txtbox_384
 from processing import ssd_vgg_preprocessing
 from eval import EVAL_MODEL
@@ -40,7 +39,7 @@ class TextboxesDetection(object):
         self.nms_th_for_all_scale = nms_th_for_all_scale
         self.nms_threshold = 0.45
         self.score_th = score_th
-        print('self.score_th', self.score_th)
+        print('\nself.score_th: {0}\n'.format(self.score_th))
 
         self.make_out_dir()
         self.text_scales = scales
@@ -715,10 +714,14 @@ if __name__ == '__main__':
                         default='./result', type=str)
     parser.add_argument('--model_dir', '-m',
                         default='./model_1steps_384', type=str)
-    parser.add_argument('--cuda_device', '-c', default='0', type=str)
-    parser.add_argument('--nms_th', '-n', default=0.5, type=float)
-    parser.add_argument('--score_th','-s', default=0.1, type=float)
-    parser.add_argument('--save_res_path', '-r', default='./result/eval_res.txt', type=str)
+    parser.add_argument('--cuda_device', '-c',
+                        default='0', type=str)
+    parser.add_argument('--nms_th', '-n',
+                        default=0.5, type=float)
+    parser.add_argument('--score_th','-s',
+                        default=0.1, type=float)
+    parser.add_argument('--save_res_path', '-r',
+                        default='./result/eval_res.txt', type=str)
     #2:read gt from txt format:(text score xmin ymin xmax ymax)
     args = parser.parse_args()
     in_dir = args.in_dir
