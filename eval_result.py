@@ -4,7 +4,7 @@ import tensorflow as tf
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 scheduler = BlockingScheduler()
-model_dir = './model'
+model_dir = './model_1steps_384'
 
 def eval_net():
     # ckpt_list = tf.train.get_checkpoint_state(model_dir).all_model_checkpoint_paths

@@ -39,7 +39,7 @@ tf.app.flags.DEFINE_boolean(
 # Train & Deploy Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
-    'train_dir', './model',
+    'train_dir', './model/20190719',
     'Directory where checkpoints and event logs are written to.'
 )
 # TODO:GPU number configuration
@@ -72,12 +72,8 @@ tf.app.flags.DEFINE_integer(
     'The frequency with which the model is saved, in seconds.'
 )
 tf.app.flags.DEFINE_float(
-	'gpu_memory_fraction', 0.9,
+	'gpu_memory_fraction', 0.8,
 	'GPU memory fraction to use.'
-)
-tf.app.flags.DEFINE_boolean(
-    'allow_growth', True,
-    'allow the GPU memory growth according to demand'
 )
 # =========================================================================== #
 # Optimization Flags.
@@ -209,7 +205,7 @@ tf.app.flags.DEFINE_integer(
     'The number of samples in each batch.'
 )
 tf.app.flags.DEFINE_integer(
-	'train_image_size', None,
+	'train_image_size', '384',
 	'Train image size'
 )
 tf.app.flags.DEFINE_string(
@@ -478,8 +474,7 @@ def main(_):
         # Kicks off the training.
         # =================================================================== #
         gpu_options = tf.GPUOptions(
-            per_process_gpu_memory_fraction=FLAGS.gpu_memory_fraction,
-            allow_growth=FLAGS.allow_growth)
+            per_process_gpu_memory_fraction=FLAGS.gpu_memory_fraction)
 
         config = tf.ConfigProto(
             log_device_placement=False,

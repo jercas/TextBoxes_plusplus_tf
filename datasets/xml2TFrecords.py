@@ -5,7 +5,7 @@ import random
 import numpy as np
 import tensorflow as tf
 import xml.etree.ElementTree as ET
-from datasets.dataset_utils import int64_feature, float_feature, bytes_feature
+from dataset_utils import int64_feature, float_feature, bytes_feature
 import tensorflow.contrib.slim as slim
 
 # TFRecords convertion parameters.

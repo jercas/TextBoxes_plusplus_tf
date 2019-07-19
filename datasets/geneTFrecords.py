@@ -1,6 +1,6 @@
 import os
 import tensorflow as tf
-from datasets import xml2TFrecords
+import xml2TFrecords
 """
 usage:
 python geneTFrecords.py --xml_img_txt_path='./logs/train_xml.txt' 
