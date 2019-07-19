@@ -5,7 +5,7 @@ import xml2TFrecords
 usage:
 python geneTFrecords.py --xml_img_txt_path='./logs/train_xml.txt' 
                         --output_dir='./tfrecords' 
-                        --output_name=annotated_data 
+                        --output_name=ICDAR_2015_TRAINING
                         --samples_per_files=2000
 """
 

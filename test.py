@@ -36,13 +36,12 @@ class TextboxesDetection(object):
 
         self.out_dir = out_dir
         self.suffixes = ['.png', '.PNG', '.jpg', '.jpeg']
-
         self.img_path, self.img_num = self.get_img_path()
-
         self.nms_th_for_all_scale = nms_th_for_all_scale
         self.nms_threshold = 0.45
         self.score_th = score_th
         print('self.score_th', self.score_th)
+
         self.make_out_dir()
         self.text_scales = scales
         self.data_format = 'NHWC'
@@ -728,7 +727,7 @@ if __name__ == '__main__':
     nms_th = args.nms_th
     score_th = args.score_th
     save_res_path = args.save_res_path
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)  # using GPU 3
+    os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
 
     instance = TextboxesDetection(
         model_dir,
