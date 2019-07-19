@@ -27,8 +27,10 @@ MANIFEST
 .idea/*
 */ICDAR_15/*
 model/*
+model_*/*
 */ckpt/*
 test_result/*
+tfrecords/*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
