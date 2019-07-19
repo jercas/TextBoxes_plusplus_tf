@@ -715,8 +715,8 @@ if __name__ == '__main__':
     parser.add_argument('--out_dir', '-o',
                         default='./result', type=str)
     parser.add_argument('--model_dir', '-m',
-                        default='./model', type=str)
-    parser.add_argument('--cuda_device', '-c', default='6,7', type=str)
+                        default='./model_1steps_384', type=str)
+    parser.add_argument('--cuda_device', '-c', default='0', type=str)
     parser.add_argument('--nms_th', '-n', default=0.5, type=float)
     parser.add_argument('--score_th','-s', default=0.1, type=float)
     parser.add_argument('--save_res_path', '-r', default='./result/eval_res.txt', type=str)
