@@ -30,13 +30,13 @@ class TextboxNet(object):
 	"""
 	Implementation of the Textbox 384 network.
 	The default features layers with 384x384 image input are:
-      conv4  ==> 48 x 48
-      conv7  ==> 24 x 24
-      conv8  ==> 12 x 12
-      conv9  ==> 6 x 6
-      conv10 ==> 4 x 4
-      conv11 ==> 2 x 2
-    The default image size used to train this network is 384x384.
+	  conv4  ==> 48 x 48
+	  conv7  ==> 24 x 24
+	  conv8  ==> 12 x 12
+	  conv9  ==> 6 x 6
+	  conv10 ==> 4 x 4
+	  conv11 ==> 2 x 2
+	The default image size used to train this network is 384x384.
 	Stage 1: 384x384， Stage 2: 768x768.
 	"""
 	default_params = TextboxParams(
@@ -231,32 +231,48 @@ def text_multibox_layer(layer,
 
 	# Location prediction.
 	# Location 4+8 coordinates, [minimum horizontal bounding box offsets-4] + [quadrilateral bounding box offsets-8] = 12.
-	num_loc_pred = num_prior_per_location * 12      # num_loc_pred = num_prior_per_location * 4
-	loc_pred = slim.conv2d(net, num_loc_pred, [3, 5], activation_fn=None,    # 3x5 conv used in textbox layer.
-	                       padding='SAME', scope='conv_loc')
+	loc_pred = slim.conv2d(net, num_prior_per_location*12, [3, 5], activation_fn=None,    # 3x5 conv used in textbox layer.
+						   padding='SAME', scope='conv_loc')
 	# TODO： different from ssd300
 	# transform to NHWC
-	# loc_pred = custom_layers.channel_to_last(loc_pred)
-	loc_pred = slim.flatten(loc_pred)
+	loc_pred = custom_layers.channel_to_last(loc_pred)
+	#loc_pred = slim.flatten(loc_pred)
 	l_shape = loc_pred.shape
-	batch_size = l_shape[0]
-	loc_pred = tf.reshape(loc_pred, [batch_size, -1, 12])
+	#batch_size = l_shape[0]
+	#loc_pred = tf.reshape(loc_pred, [batch_size, -1, 12])
 	# NHW(num_anchors+4) --> [NHW, num_anchors, 4]
-	# loc_pred = tf.reshape(loc_pred, tensor_shape(loc_pred, 4)[:-1]+[num_anchors, 4])
+	loc_pred = tf.reshape(loc_pred, tensor_shape(loc_pred, 4)[:-1]+[num_anchors, 4])
 
 	# Class prediction.
-	num_cls_pred = num_prior_per_location * num_classes
-	cls_pred = slim.conv2d(net, num_cls_pred, [3, 5], activation_fn=None,
-	                       padding='SAME',scope='conv_cls')
+	cls_pred = slim.conv2d(net, num_prior_per_location*num_classes, [3, 5], activation_fn=None,
+						   padding='SAME',scope='conv_cls')
 	# transform to NHWC
-	# cls_pred = custom_layers.channel_to_last(cls_pred)
-	l_shape = tf.shape(cls_pred)
-	cls_pred = slim.flatten(cls_pred)
-	cls_pred = tf.reshape(cls_pred, [batch_size, -1 ,2])
+	cls_pred = custom_layers.channel_to_last(cls_pred)
+	#l_shape = tf.shape(cls_pred)
+	#cls_pred = slim.flatten(cls_pred)
+	#cls_pred = tf.reshape(cls_pred, [batch_size, -1 ,2])
 	# NHW(num_anchors+classes) --> [NHW, num_anchors, classes]
-	# cls_pred = tf.reshape(cls_pred, tensor_shape(cls_pred, 4)[:-1]+[num_anchors, num_classes])
+	cls_pred = tf.reshape(cls_pred, tensor_shape(cls_pred, 4)[:-1]+[num_anchors, num_classes])
 
 	return cls_pred, loc_pred, l_shape
+
+
+def tensor_shape(x, rank=3):
+	"""Returns the dimensions of a tensor.
+	Args:
+	  x: A N-D Tensor of shape.
+	  rank:
+	Returns:
+	  A list of dimensions. Dimensions that are statically known are python
+		integers,otherwise they are integer scalar tensors.
+	"""
+	if x.get_shape().is_fully_defined():
+		return x.get_shape().as_list()
+	else:
+		static_shape = x.get_shape().with_rank(rank).as_list()
+		dynamic_shape = tf.unstack(tf.shape(x), rank)
+		return [s if s is not None else d
+				for s, d in zip(static_shape, dynamic_shape)]
 
 
 def text_net(inputs,
@@ -479,7 +495,7 @@ def ssd_arg_scope(weight_decay=0.0005, data_format='NHWC'):
 
 
 def textbox_anchor_all_layers(img_shape, layers_shape, anchor_ratios, anchor_sizes, anchor_steps,
-                              offset=0.5, dtype=np.float32):
+							  offset=0.5, dtype=np.float32):
 	"""
 		Compute anchor boxes for all feature layers.
 	:param img_shape:
