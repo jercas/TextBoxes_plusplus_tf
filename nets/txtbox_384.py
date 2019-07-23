@@ -42,10 +42,8 @@ class TextboxNet(object):
 	default_params = TextboxParams(
 		img_shape=(384, 384),
 		num_classes=2,
-		# The 6 intermediate conv layers connected to the 6 Text-box layers.
-		feat_layers=['conv4', 'conv7', 'conv8', 'conv9', 'conv10', 'conv11'],
-		#TODO：feat_shapes is feature map size?
-		feat_shapes=[(48, 48), (24, 24), (12, 12), (6, 6), (4, 4), (2, 2)],
+		feat_layers=['conv4', 'conv7', 'conv8', 'conv9', 'conv10', 'conv11'], # 要进行检测的特征图name
+		feat_shapes=[(48, 48), (24, 24), (12, 12), (6, 6), (4, 4), (2, 2)], # 特征图大小
 		# Anchors 48 = 8 ratios * 6 sizes, each textbox layer 8 = 8 ratios * 1 size
 		#TODO: Different anchor ratios setting from the original paper (1,2,3,5,1/2,1/3,1/5)->(2,1/2,3,1/3,4,1/4,5,1/5).
 		anchor_ratios=[
@@ -55,7 +53,7 @@ class TextboxNet(object):
 			[2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
 			[2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
 			[2.0, 1. / 2, 3.0, 1. / 3, 4.0, 1. / 4, 5., 1. / 5],
-		],
+		], # 特征图先验框所采用的长宽比
 		anchor_sizes=[
 			(30.,60.),
 			(30.,90.),
@@ -63,11 +61,11 @@ class TextboxNet(object):
 			(150., 210.),
 			(210., 270.),
 			(270., 330.)
-		],
+		], # 不同特征图的先验框尺度（第一个值是s_k，第2个值是s_k+1）
 		# 辅助放缩搜索网格中心点的位置
-		anchor_steps=[8, 16, 32, 64, 100, 300],
-		normalizations=[20, -1, -1, -1, -1, -1],
-		prior_scaling=[0.1, 0.1, 0.2, 0.2])  #step  8 16 32 64 96 192
+		anchor_steps=[8, 16, 32, 64, 100, 300], # 特征图单元大小
+		normalizations=[20, -1, -1, -1, -1, -1], # L2 Normalization
+		prior_scaling=[0.1, 0.1, 0.2, 0.2])  # offset calculate variances
 
 
 	def __init__(self, params=None):
