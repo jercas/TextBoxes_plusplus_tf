@@ -252,7 +252,7 @@ def text_multibox_layer(layer,
 	#cls_pred = slim.flatten(cls_pred)
 	#cls_pred = tf.reshape(cls_pred, [batch_size, -1 ,2])
 	# NHW(num_anchors+classes) --> [NHW, num_anchors, classes]
-	cls_pred = tf.reshape(cls_pred, tensor_shape(cls_pred, 4)[:-1]+[num_anchors, num_classes])
+	cls_pred = tf.reshape(cls_pred, tensor_shape(cls_pred, 4)[:-1]+[num_prior_per_location, num_classes])
 
 	return cls_pred, loc_pred, l_shape
 
