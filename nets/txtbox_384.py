@@ -241,7 +241,7 @@ def text_multibox_layer(layer,
 	#batch_size = l_shape[0]
 	#loc_pred = tf.reshape(loc_pred, [batch_size, -1, 12])
 	# NHW(num_anchors+4) --> [NHW, num_anchors, 4]
-	loc_pred = tf.reshape(loc_pred, tensor_shape(loc_pred, 4)[:-1]+[num_anchors, 4])
+	loc_pred = tf.reshape(loc_pred, tensor_shape(loc_pred, 4)[:-1]+[num_prior_per_location, 12])
 
 	# Class prediction.
 	cls_pred = slim.conv2d(net, num_prior_per_location*num_classes, [3, 5], activation_fn=None,
