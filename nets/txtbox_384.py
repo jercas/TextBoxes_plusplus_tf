@@ -63,7 +63,8 @@ class TextboxNet(object):
 			(270., 330.)
 		], # 不同特征图的先验框尺度（第一个值是s_k，第2个值是s_k+1）
 		# 辅助放缩搜索网格中心点的位置
-		anchor_steps=[8, 16, 32, 64, 100, 300], # 特征图单元大小
+		anchor_steps=[8, 16, 32, 64, 100, 300], # 特征图单元大小 （image_shape / feature_map_shape），用来计算单元的center,
+												# 即该层前所有卷积步长stride的乘积， 48*8 = 24*16 = 32*12 = 64*6 = 384 image_size
 		normalizations=[20, -1, -1, -1, -1, -1], # L2 Normalization
 		prior_scaling=[0.1, 0.1, 0.2, 0.2])  # offset calculate variances
 
@@ -157,6 +158,7 @@ class TextboxNet(object):
 			gys,
 			matching_threshold=0.5,
 			prior_scaling=self.params.prior_scaling,
+			dtype=tf.float32,
 			scope=scope)
 
 
@@ -401,7 +403,7 @@ def text_net(inputs,
 
 def textbox_anchor_one_layer(img_shape, feat_shape, ratios, size, step, offset=0.5, dtype=np.float32):
 	"""
-		Computer TextBoxes++ default anchor boxes for each feature layer.
+		Computer TextBoxes++ default anchor boxes for one selected feature layer.
 		Each feature point has 12 default textboxes (6 default boxes + 6 offsets vertical boxes).
 		Determine the relative position grid of the centers and the relative width and height.
 
@@ -424,7 +426,7 @@ def textbox_anchor_one_layer(img_shape, feat_shape, ratios, size, step, offset=0
 	y_offset = (y.astype(dtype) + offset) * step / img_shape[0]
 	x_offset = x
 
-	#38,38,2 origin and offset
+	# (38, 38, 2) origin anchor + offset anchor
 	x_out = np.stack((x, x_offset), -1)
 	y_out = np.stack((y, y_offset), -1)
 
@@ -432,26 +434,30 @@ def textbox_anchor_one_layer(img_shape, feat_shape, ratios, size, step, offset=0
 	y_out = np.expand_dims(y_out, axis=-1)
 	x_out = np.expand_dims(x_out, axis=-1)
 
-	# Compute relative height and width.
+	# Compute relative height and width, 8 ratios + 2 sizes.
 	num_anchors = len(ratios) + len(size)
+	# shape: (10,)
 	h = np.zeros((num_anchors,), dtype=dtype)
 	w = np.zeros((num_anchors,), dtype=dtype)
 
-	# Add first anchor boxes with ratio=1
+	# Add first anchor boxes with ratio=1 (smaller square).
+	# e.g., h[0] = 30 / 300, w[0] = 30 / 300.
 	h[0] = size[0] / img_shape[0]
 	w[0] = size[0] / img_shape[1]
 	di = 1
 
 	if len(size) > 1:
+		# Add last anchor boxes with ratio=1' (bigger square).
+		# e.g., h[1] = sqrt(30 * 60) / 300, w[1] = sqrt(30 * 60) / 300.
 		h[1] = math.sqrt(size[0] * size[1]) / img_shape[0]
 		w[1] = math.sqrt(size[0] * size[1]) / img_shape[1]
 		di += 1
 
 	for i, r in enumerate(ratios):
+		# Add the other anchors.
+		# h[k] = Sk / sqrt(ar), w[k] = sk * sqrt(ar). e.g., h[2] = 30 / 300 / sqrt(2.0), w[2] = 30 / 300 * sqrt(2.0).
 		h[i+di] = size[0] / img_shape[0] / math.sqrt(r)
 		w[i+di] = size[0] / img_shape[1] * math.sqrt(r)
-		# h[i] = scale / math.sqrt(r) / feat_shape[0]
-		# w[i] = scale * math.sqrt(r) / feat_shape[1]
 
 	xmin = x_out - w/2
 	ymin = y_out - h/2

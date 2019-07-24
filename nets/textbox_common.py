@@ -3,7 +3,7 @@ import tensorflow as tf
 # =========================================================================== #
 # TensorFlow implementation of Text Boxes encoding / decoding.
 # =========================================================================== #
-
+# label和 bbox编码函数
 def tf_text_bboxes_encode_layer(glabels,
                                 bboxes,
                                 gxs ,
@@ -14,7 +14,7 @@ def tf_text_bboxes_encode_layer(glabels,
 								dtype=tf.float32):
 
 	"""
-	Encode groundtruth labels and bounding boxes using Textbox anchors from one layer.
+	Encode groundtruth labels and bounding boxes using Textboxes++ anchors from one layer.
 
 	Arguments:
 	  glabels: 1D Tensor(int64) containing ground truth label;
@@ -22,7 +22,7 @@ def tf_text_bboxes_encode_layer(glabels,
 	  gxs: Nx4 Tensor
 	  gys: Nx4 Tensor
 	  anchors_layer: Numpy array with layer anchors;
-	  matching_threshold: Threshold for positive match with groundtruth bboxes;
+	  matching_threshold: Threshold for positive match with groundtruth bboxes, jaccard iou threshold;
 	  prior_scaling: Scaling of encoded coordinates.
 
 	Return:
@@ -30,6 +30,7 @@ def tf_text_bboxes_encode_layer(glabels,
 	# this is a binary classification problem, so target_score and target_labels are same.
 	"""
 	# Anchors coordinates and volume.
+	# 获取Anchor层
 	xmin, ymin, xmax, ymax = anchors_layer
 	xref = (xmin + xmax) /2
 	yref = (ymin + ymax) /2
@@ -42,11 +43,12 @@ def tf_text_bboxes_encode_layer(glabels,
 	print(bboxes.shape)
 
 	# glabels = tf.Print(glabels, [tf.shape(glabels)], message=' glabels shape is :')
-	#,,2
+	# yref, xref, href, wref = anchors_layer
 	# ymin = yref - href / 2.
 	# xmin = xref - wref / 2.
 	# ymax = yref + href / 2.
 	# xmax = xref + wref / 2.
+	# 体积
 	vol_anchors = (xmax - xmin) * (ymax - ymin)
 
 	# bboxes = tf.Print(bboxes, [tf.shape(bboxes), bboxes], message=' bboxes in encode shape:', summarize=20)
@@ -126,15 +128,20 @@ def tf_text_bboxes_encode_layer(glabels,
 				  feat_ymin, feat_xmin, feat_ymax, feat_xmax,
 				  feat_x1, feat_x2, feat_x3, feat_x4,
 				  feat_y1, feat_y2, feat_y3, feat_y4):
-		"""Condition: check label index.
+		"""
+		Condition: check label index.
 		"""
 		# tf.less(a, b) -> return whether is a > b?
 		r = tf.less(i, tf.shape(glabels)[0])
 		return r
 
 
-	def body(i,feat_labels, feat_scores,feat_ymin, feat_xmin, feat_ymax, feat_xmax, feat_x1, feat_x2, feat_x3, feat_x4, feat_y1, feat_y2, feat_y3, feat_y4):
-		"""Body: update feature labels, scores and bboxes.
+	def body(i, feat_labels, feat_scores,
+	         feat_ymin, feat_xmin, feat_ymax, feat_xmax,
+	         feat_x1, feat_x2, feat_x3, feat_x4,
+	         feat_y1, feat_y2, feat_y3, feat_y4):
+		"""
+		Body: update feature labels, scores and bboxes.
 		Follow the original SSD paper for that purpose:
 		  - assign values when jaccard > 0.5;
 		  - only update if beat the score of other bboxes.
@@ -199,9 +206,8 @@ def tf_text_bboxes_encode_layer(glabels,
 		feat_y4 = fmask * gy[3] + (1 - fmask) * feat_y4
 
 		# Check no annotation label: ignore these anchors...
-		# interscts = intersection_with_anchors(bbox)
-		#mask = tf.logical_and(interscts > ignore_threshold,
-		#                     label == no_annotation_label)
+		# intersection = intersection_with_anchors(bbox)
+		# mask = tf.logical_and(intersection > ignore_threshold, label == no_annotation_label)
 		# Replace scores by -1.
 		#feat_scores = tf.where(mask, -tf.cast(mask, dtype), feat_scores)
 
@@ -221,9 +227,9 @@ def tf_text_bboxes_encode_layer(glabels,
 										   [i, feat_labels, feat_scores,
 											feat_ymin, feat_xmin,
 											feat_ymax, feat_xmax,
-											feat_x1, feat_x2, feat_x3, feat_x4, feat_y1, feat_y2, feat_y3, feat_y4])
+											feat_x1, feat_x2, feat_x3, feat_x4,
+											feat_y1, feat_y2, feat_y3, feat_y4])
 
-	# Transform to center / size.
 	'''
 	这里的逻辑是用gt的外接水平矩形框与anchor/default box做匹配，得到iou的mask之后更新anchor对应的gt
 	然后求取anchor对应gt的偏移
@@ -232,12 +238,14 @@ def tf_text_bboxes_encode_layer(glabels,
 	# feat_ymin = tf.Print(feat_ymin, [tf.shape(feat_ymin), tf.count_nonzero(feat_ymin), feat_ymin], message= ' feat_ymin :', summarize=100)
 	# feat_xmax = tf.Print(feat_xmax, [tf.shape(feat_xmax), tf.count_nonzero(feat_xmax), feat_xmax], message= ' feat_xmax : ', summarize=100)
 	# feat_xmin = tf.Print(feat_xmin, [tf.shape(feat_xmin), tf.count_nonzero(feat_xmin), feat_xmin], message= ' feat_xmin: ' , summarize=100)
+
+	# Transform to center / size.
+	# 计算补偿后的中心
 	feat_cy = (feat_ymax + feat_ymin) / 2.
 	feat_cx = (feat_xmax + feat_xmin) / 2.
 	feat_h = feat_ymax - feat_ymin
 	feat_w = feat_xmax - feat_xmin
 
-	# Encode features.
 	# feat_ymin = tf.Print(feat_ymin, [tf.shape(feat_ymin), feat_ymin], message= ' feat_ymin : ', summarize=20)
 	# feat_xmin = tf.Print(feat_xmin, [tf.shape(feat_xmin), feat_xmin], message= ' feat_xmin : ', summarize=20)
 	#
@@ -251,6 +259,7 @@ def tf_text_bboxes_encode_layer(glabels,
 	# href = tf.Print(href, [tf.shape(href), href], message=' href : ',summarize=20)
 	# wref = tf.Print(wref, [tf.shape(wref), wref], message=' wref : ', summarize=20)
 
+	# Encode features.
 	feat_xmin = (feat_cx - xref) / wref / prior_scaling[0]
 	feat_ymin = (feat_cy - yref) / href / prior_scaling[1]
 
@@ -267,7 +276,7 @@ def tf_text_bboxes_encode_layer(glabels,
 	feat_y3 = (feat_y3 - ymax) / href / prior_scaling[1]
 	feat_y4 = (feat_y4 - ymax) / href / prior_scaling[1]
 
-	# Use SSD ordering: x / y / w / h instead of ours.
+	# Use TextBoxes++ ordering: xmin / ymin / xmax / ymax instead of ours.
 	# add x y 1,2,3,4
 
 	# feat_ymin = tf.Print(feat_ymin, [tf.shape(feat_ymin), feat_ymin], message= ' feat_ymin : ', summarize=20)
@@ -278,7 +287,7 @@ def tf_text_bboxes_encode_layer(glabels,
 	# feat_localizations = tf.Print(feat_localizations, [tf.shape(feat_localizations), feat_localizations], message=' feat_localizations: ', summarize=20)
 	return feat_labels, feat_localizations, feat_scores
 
-
+# ground truth编码函数
 def tf_text_bboxes_encode(glabels,
                           bboxes,
                           anchors,
@@ -288,12 +297,13 @@ def tf_text_bboxes_encode(glabels,
                           prior_scaling=[0.1, 0.1, 0.2, 0.2],
                           dtype=tf.float32,
                           scope='text_bboxes_encode'):
-	"""Encode groundtruth labels and bounding boxes using SSD net anchors.
-	Encoding boxes for all feature layers.
+	"""
+	Encode groundtruth labels and bounding boxes using TextBoxes++ net anchors.
+	Encoding boxes for all selected feature layers.
 
 	Arguments:
-	  glabels: ground truth;
-	  bboxes: Nx4 Tensor(float) with bboxes relative coordinates;
+	  glabels: 1D Tensor (int64) containing groundtruth labels;
+	  bboxes: Nx4 Tensor (float) with bboxes relative coordinates;
 	  anchors: List of Numpy array with layer anchors;
 	  gxs: shape = (N,4) with x,y coordinates
 	  gys: shape = (N,4) with x,y coordinates
@@ -313,6 +323,7 @@ def tf_text_bboxes_encode(glabels,
 		target_scores = []
 		for i, anchors_layer in enumerate(anchors):
 			with tf.name_scope('bboxes_encode_block_%i' % i):
+				# 将label和bbox进行编码
 				t_label, t_loc, t_scores = \
 					tf_text_bboxes_encode_layer(glabels,
 					                            bboxes,
