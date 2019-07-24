@@ -564,13 +564,16 @@ def ssd_losses(logits, localisations,
 			   label_smoothing=0.,
 			   batch_size=16,
 			   scope=None):
-	'''Loss functions for training the text box network.
+	"""
+	Loss functions for training the textboxes++ network.
+	This function defines the different loss components of the SSD, and adds them to the TF loss collection.
+
 	Arguments:
 	  logits: (list of) predictions logits Tensors;                x
 	  localisations: (list of) predictions localisations Tensors;  l
 	  glocalisations: (list of) groundtruth localisations Tensors; g
 	  gscores: (list of) groundtruth score / conference Tensors;   c
-	'''
+	"""
 	# from ssd loss
 	with tf.name_scope(scope, 'txt_losses'):
 		lshape = tfe.get_shape(logits[0], 5)
@@ -587,6 +590,7 @@ def ssd_losses(logits, localisations,
 		flocalisations = []
 		fglocalisations = []
 		fglabels = []
+
 		# Transform all matrix to vector.
 		for i in range(len(logits)):
 			flogits.append(tf.reshape(logits[i], [-1, num_classes]))
@@ -597,22 +601,20 @@ def ssd_losses(logits, localisations,
 
 		# And concat the crap!
 		glabels = tf.concat(fglabels, axis=0)
-		logits = tf.concat(flogits, axis=0)  # x
-		gscores = tf.concat(fgscores, axis=0)  # c
-		localisations = tf.concat(flocalisations, axis=0)  # l
-		glocalisations = tf.concat(fglocalisations, axis=0)  # g
+		logits = tf.concat(flogits, axis=0)                      # x
+		gscores = tf.concat(fgscores, axis=0)                   # c
+		localisations = tf.concat(flocalisations, axis=0)      # l
+		glocalisations = tf.concat(fglocalisations, axis=0)   # g
 		dtype = logits.dtype
 
 		# Compute positive matching mask...
 		pmask = gscores > match_threshold  # positive mask
 		# pmask = tf.concat(axis=0, values=[pmask[:tf.argmax(gscores, axis=0)], [True], pmask[tf.argmax(gscores, axis=0) + 1:]])
-
 		ipmask = tf.cast(pmask, tf.int32)  # int positive mask
 		fpmask = tf.cast(pmask, dtype)  # float positive mask
 		n_positives = tf.reduce_sum(fpmask)  # calculate all number
 
 		# Hard negative mining...
-		# conf loss ??
 		no_classes = tf.cast(pmask, tf.int32)
 		predictions = slim.softmax(logits)  #
 		nmask = tf.logical_and(tf.logical_not(pmask), gscores > -0.5)  #
@@ -659,15 +661,3 @@ def ssd_losses(logits, localisations,
 				tf.reduce_sum(loss * weights), batch_size, name='value')
 			tf.losses.add_loss(loss)
 			l_loc.append(loss)
-
-		# with tf.name_scope('total'):
-		#     total_cross_pos = tf.add_n(l_cross_pos, 'cross_entropy_pos')
-		#     total_cross_neg = tf.add_n(l_cross_neg, 'cross_entropy_neg')
-		#     total_cross = tf.add(total_cross_pos, total_cross_neg, 'cross_entropy')
-		#     total_loc = tf.add_n(l_loc, 'localization')
-		#
-		#     # Add to EXTRA LOSSES TF.collection
-		#     tf.add_to_collection('EXTRA_LOSSES', total_cross_pos)
-		#     tf.add_to_collection('EXTRA_LOSSES', total_cross_neg)
-		#     tf.add_to_collection('EXTRA_LOSSES', total_cross)
-		#     tf.add_to_collection('EXTRA_LOSSES', total_loc)
