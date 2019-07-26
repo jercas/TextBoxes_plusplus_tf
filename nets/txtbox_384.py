@@ -237,24 +237,24 @@ def text_multibox_layer(layer,
 						   padding='SAME', scope='conv_loc')
 	# TODO： different from ssd300
 	# transform to NHWC
-	loc_pred = custom_layers.channel_to_last(loc_pred)
-	#loc_pred = slim.flatten(loc_pred)
+	#loc_pred = custom_layers.channel_to_last(loc_pred)
+	loc_pred = slim.flatten(loc_pred)
 	l_shape = loc_pred.shape
-	#batch_size = l_shape[0]
-	#loc_pred = tf.reshape(loc_pred, [batch_size, -1, 12])
+	batch_size = l_shape[0]
+	loc_pred = tf.reshape(loc_pred, [batch_size, -1, 12])
 	# NHW(num_anchors+4) --> [NHW, num_anchors, 4]
-	loc_pred = tf.reshape(loc_pred, tensor_shape(loc_pred, 4)[:-1]+[num_prior_per_location, 12])
+	#loc_pred = tf.reshape(loc_pred, tensor_shape(loc_pred, 4)[:-1]+[num_prior_per_location, 12])
 
 	# Class prediction.
 	cls_pred = slim.conv2d(net, num_prior_per_location*num_classes, [3, 5], activation_fn=None,
 						   padding='SAME',scope='conv_cls')
 	# transform to NHWC
-	cls_pred = custom_layers.channel_to_last(cls_pred)
-	#l_shape = tf.shape(cls_pred)
-	#cls_pred = slim.flatten(cls_pred)
-	#cls_pred = tf.reshape(cls_pred, [batch_size, -1 ,2])
+	#cls_pred = custom_layers.channel_to_last(cls_pred)
+	l_shape = tf.shape(cls_pred)
+	cls_pred = slim.flatten(cls_pred)
+	cls_pred = tf.reshape(cls_pred, [batch_size, -1 ,2])
 	# NHW(num_anchors+classes) --> [NHW, num_anchors, classes]
-	cls_pred = tf.reshape(cls_pred, tensor_shape(cls_pred, 4)[:-1]+[num_prior_per_location, num_classes])
+	#cls_pred = tf.reshape(cls_pred, tensor_shape(cls_pred, 4)[:-1]+[num_prior_per_location, num_classes])
 
 	return cls_pred, loc_pred, l_shape
 
